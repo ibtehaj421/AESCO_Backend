@@ -1,0 +1,67 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / Rider settings
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~ 
+
+# NuGet packages
+*.nupkg
+# if you pack NuGet, keep packages/
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+# DotNet CLI artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Azure stuff
+.localhistory/
+*.dbmdl
+*.bak
+*.bacpac
+
+# Rider cache
+*.iml
+.gradle/
+.idea/
+*.ipr
+*.iws
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+
+# Others
+_ReSharper*/
+*.DotSettings.user
+Generated\ Files/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
