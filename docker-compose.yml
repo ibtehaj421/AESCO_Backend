@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5300:5300"
+    volumes:
+      - ./uploads:/app/uploads # for image and file storage
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5300
