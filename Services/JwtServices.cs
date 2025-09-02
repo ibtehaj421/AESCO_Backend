@@ -4,9 +4,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ASCO.Models;
 
-public class JwtServices {
+namespace ASCO.Services
+{
+    public class JwtServices
+{
     private readonly IConfiguration _configuration;
-    public JwtServices(IConfiguration configuration) {
+    public JwtServices(IConfiguration configuration)
+    {
         _configuration = configuration;
     }
 
@@ -60,4 +64,5 @@ public class JwtServices {
 
     //     return new JwtSecurityTokenHandler().WriteToken(token);
     // }
+}
 }

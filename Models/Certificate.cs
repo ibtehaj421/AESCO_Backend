@@ -113,6 +113,9 @@ namespace ASCO.Models
         public int UserId { get; set; }
 
         [Required]
+        public int ToUserId { get; set; } // recipient
+
+        [Required]
         [MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
@@ -139,5 +142,6 @@ namespace ASCO.Models
 
         // Navigation properties
         public virtual User User { get; set; } = null!;
+        public virtual User ToUser { get; set; } = null!;
     }
 }

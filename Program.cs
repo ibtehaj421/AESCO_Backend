@@ -3,9 +3,11 @@ using ASCO.DbContext;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-//using ASCO.Repositories.Interfaces;
+using ASCO.Repositories;
+using ASCO.Services;
 //using ASCO.Repositories.Implementations;
 using Microsoft.Extensions.FileProviders;
+using ASCP.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,10 @@ builder.Services.AddCors(options =>
     });
 });
 //all class configurations and services should be added here
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<RoleRepository>();
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<UserService>();
 
 //jwt add ons go here.
 builder.Services.AddScoped<JwtServices>();
