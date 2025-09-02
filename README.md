@@ -1,5 +1,5 @@
-# AESCO_Backend
-# 🚀 Tez Services API
+# ASCO_Backend
+# 🚀 ASCO Services API
 
 A **.NET 8 Web API** for managing users, organizations, and JWT-based authentication. This project demonstrates secure authentication, role-based authorization, and follows a clean architecture with Repository and Service layers.
 
