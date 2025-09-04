@@ -15,12 +15,30 @@ public class AuthController : ControllerBase
     }
     //register
     [HttpPost("register/user")]
-    public async Task<string> Register([FromBody] CreateUserDto request) {
+    public async Task<string> Register([FromBody] CreateUserDto request)
+    {
         if (request == null)
         {
             return "Invalid request data.";
         }
         return await _userService.RegisterUserAsync(request);
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<string>> Login([FromBody] LoginDto request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Invalid request data.");
+        }
+
+        var response = await _userService.LoginUserAsync(request);
+        if (response == null)
+        {
+            return BadRequest("Invalid credentials.");
+        }
+
+        return Ok(response);
     }
 
 }
