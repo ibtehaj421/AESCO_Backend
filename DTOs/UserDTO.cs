@@ -290,3 +290,135 @@ public class UserSearchDto
     public string SortBy { get; set; } = "CreatedAt";
     public bool SortDescending { get; set; } = true;
 }
+
+public class CrewDocumentSearchDto
+{
+    public int? UserId { get; set; }
+    public string? Keyword { get; set; }
+    public DateTime? ExpiryFrom { get; set; }
+    public DateTime? ExpiryTo { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+public class CrewFilterDto
+{
+    public string? Keyword { get; set; }
+    public string? RankGroup { get; set; }
+    public string? Rank { get; set; }
+    public string? Competency { get; set; }
+    public string? Nationality { get; set; }
+    public int? YearsWithOperatorMin { get; set; }
+    public int? YearsWithOperatorMax { get; set; }
+    public int? YearsInRankMin { get; set; }
+    public int? YearsInRankMax { get; set; }
+    public bool? CurrentExperience { get; set; }
+    public bool? PastExperience { get; set; }
+    public string? CrewStatus { get; set; } // Active, Contingent, Left
+    public string? JobType { get; set; } // Contract base, Fixed Term, etc.
+    public string? AssignmentStatus { get; set; } // On Board, On Vacation
+    public int? VesselId { get; set; }
+    public DateTime? WorkStartDateFrom { get; set; }
+    public DateTime? WorkStartDateTo { get; set; }
+    public DateTime? WorkEndDateFrom { get; set; }
+    public DateTime? WorkEndDateTo { get; set; }
+    public int? AgeFrom { get; set; }
+    public int? AgeTo { get; set; }
+    public string? BloodGroup { get; set; }
+    public string? EducationLevel { get; set; }
+    public string? School { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public string SortBy { get; set; } = "CreatedAt";
+    public bool SortDescending { get; set; } = true;
+}
+
+public class CreateCrewMedicalDto
+{
+    [Required]
+    public int UserId { get; set; }
+    [Required, StringLength(100)]
+    public string ProviderName { get; set; } = string.Empty;
+    [StringLength(100)]
+    public string? BloodGroup { get; set; }
+    [Required]
+    public DateTime ExaminationDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    [StringLength(500)]
+    public string? Notes { get; set; }
+}
+
+public class CrewMedicalDto : CreateCrewMedicalDto
+{
+    [Required]
+    public int Id { get; set; }
+}
+
+public class CreateCrewPassportDto
+{
+    [Required]
+    public int UserId { get; set; }
+    [Required, StringLength(50)]
+    public string PassportNumber { get; set; } = string.Empty;
+    [StringLength(50)]
+    public string? Nationality { get; set; }
+    [Required]
+    public DateTime IssueDate { get; set; }
+    [Required]
+    public DateTime ExpiryDate { get; set; }
+    [StringLength(100)]
+    public string? IssuedBy { get; set; }
+    [StringLength(200)]
+    public string? Notes { get; set; }
+}
+
+public class CrewPassportDto : CreateCrewPassportDto
+{
+    [Required]
+    public int Id { get; set; }
+}
+
+public class CreateCrewVisaDto
+{
+    [Required]
+    public int UserId { get; set; }
+    [Required, StringLength(50)]
+    public string VisaType { get; set; } = string.Empty;
+    [StringLength(50)]
+    public string? Country { get; set; }
+    [Required]
+    public DateTime IssueDate { get; set; }
+    [Required]
+    public DateTime ExpiryDate { get; set; }
+    [StringLength(100)]
+    public string? IssuedBy { get; set; }
+    [StringLength(200)]
+    public string? Notes { get; set; }
+}
+
+public class CrewVisaDto : CreateCrewVisaDto
+{
+    [Required]
+    public int Id { get; set; }
+}
+
+public class CreateCrewReportDto
+{
+    [Required]
+    public int UserId { get; set; }
+    [Required, StringLength(50)]
+    public string ReportType { get; set; } = string.Empty;
+    [Required, StringLength(200)]
+    public string Title { get; set; } = string.Empty;
+    [StringLength(1000)]
+    public string? Details { get; set; }
+    public DateTime? ReportDate { get; set; }
+}
+
+public class CrewReportDto : CreateCrewReportDto
+{
+    [Required]
+    public int Id { get; set; }
+}

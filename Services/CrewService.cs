@@ -148,6 +148,128 @@ namespace ASCO.Services
             int result = await _crewRepository.UnassignCrewFromVesselAsync(activeAssignment);
             return result;
         }
+
+        // crew medical
+        public async Task<int> CreateMedicalAsync(CreateCrewMedicalDto dto)
+        {
+            var rec = new CrewMedicalRecord
+            {
+                UserId = dto.UserId,
+                ProviderName = dto.ProviderName,
+                BloodGroup = dto.BloodGroup,
+                ExaminationDate = dto.ExaminationDate,
+                ExpiryDate = dto.ExpiryDate,
+                Notes = dto.Notes
+            };
+            return await _crewRepository.AddMedicalAsync(rec);
+        }
+
+        public async Task<int> UpdateMedicalAsync(CrewMedicalDto dto)
+        {
+            var existing = await _crewRepository.GetMedicalByIdAsync(dto.Id);
+            if (existing == null) return 0;
+            existing.ProviderName = dto.ProviderName;
+            existing.BloodGroup = dto.BloodGroup;
+            existing.ExaminationDate = dto.ExaminationDate;
+            existing.ExpiryDate = dto.ExpiryDate;
+            existing.Notes = dto.Notes;
+            existing.UpdatedAt = DateTime.UtcNow;
+            return await _crewRepository.UpdateMedicalAsync(existing);
+        }
+
+        // passports
+        public async Task<int> CreatePassportAsync(CreateCrewPassportDto dto)
+        {
+            var rec = new CrewPassport
+            {
+                UserId = dto.UserId,
+                PassportNumber = dto.PassportNumber,
+                Nationality = dto.Nationality,
+                IssueDate = dto.IssueDate,
+                ExpiryDate = dto.ExpiryDate,
+                IssuedBy = dto.IssuedBy,
+                Notes = dto.Notes
+            };
+            return await _crewRepository.AddPassportAsync(rec);
+        }
+
+        public async Task<int> UpdatePassportAsync(CrewPassportDto dto)
+        {
+            var existing = await _crewRepository.GetPassportByIdAsync(dto.Id);
+            if (existing == null) return 0;
+            existing.PassportNumber = dto.PassportNumber;
+            existing.Nationality = dto.Nationality;
+            existing.IssueDate = dto.IssueDate;
+            existing.ExpiryDate = dto.ExpiryDate;
+            existing.IssuedBy = dto.IssuedBy;
+            existing.Notes = dto.Notes;
+            existing.UpdatedAt = DateTime.UtcNow;
+            return await _crewRepository.UpdatePassportAsync(existing);
+        }
+
+        // visas
+        public async Task<int> CreateVisaAsync(CreateCrewVisaDto dto)
+        {
+            var rec = new CrewVisa
+            {
+                UserId = dto.UserId,
+                VisaType = dto.VisaType,
+                Country = dto.Country,
+                IssueDate = dto.IssueDate,
+                ExpiryDate = dto.ExpiryDate,
+                IssuedBy = dto.IssuedBy,
+                Notes = dto.Notes
+            };
+            return await _crewRepository.AddVisaAsync(rec);
+        }
+
+        public async Task<int> UpdateVisaAsync(CrewVisaDto dto)
+        {
+            var existing = await _crewRepository.GetVisaByIdAsync(dto.Id);
+            if (existing == null) return 0;
+            existing.VisaType = dto.VisaType;
+            existing.Country = dto.Country;
+            existing.IssueDate = dto.IssueDate;
+            existing.ExpiryDate = dto.ExpiryDate;
+            existing.IssuedBy = dto.IssuedBy;
+            existing.Notes = dto.Notes;
+            existing.UpdatedAt = DateTime.UtcNow;
+            return await _crewRepository.UpdateVisaAsync(existing);
+        }
+
+        // reports
+        public async Task<int> CreateCrewReportAsync(CreateCrewReportDto dto)
+        {
+            var rec = new CrewReport
+            {
+                UserId = dto.UserId,
+                ReportType = dto.ReportType,
+                Title = dto.Title,
+                Details = dto.Details,
+                ReportDate = dto.ReportDate ?? DateTime.UtcNow
+            };
+            return await _crewRepository.AddCrewReportAsync(rec);
+        }
+
+        public async Task<int> UpdateCrewReportAsync(CrewReportDto dto)
+        {
+            var existing = await _crewRepository.GetCrewReportByIdAsync(dto.Id);
+            if (existing == null) return 0;
+            existing.ReportType = dto.ReportType;
+            existing.Title = dto.Title;
+            existing.Details = dto.Details;
+            existing.ReportDate = dto.ReportDate ?? existing.ReportDate;
+            existing.UpdatedAt = DateTime.UtcNow;
+            return await _crewRepository.UpdateCrewReportAsync(existing);
+        }
+
+        // searches
+        public Task<List<CrewMedicalRecord>> SearchMedicalAsync(CrewDocumentSearchDto s) => _crewRepository.SearchMedicalAsync(s);
+        public Task<List<CrewPassport>> SearchPassportsAsync(CrewDocumentSearchDto s) => _crewRepository.SearchPassportsAsync(s);
+        public Task<List<CrewVisa>> SearchVisasAsync(CrewDocumentSearchDto s) => _crewRepository.SearchVisasAsync(s);
+        public Task<List<CrewReport>> SearchCrewReportsAsync(int? userId, string? reportType, int page, int pageSize) => _crewRepository.SearchCrewReportsAsync(userId, reportType, page, pageSize);
+
+        public Task<List<ShipAssignment>> GetAssignmentHistoryAsync(int userId) => _crewRepository.GetAssignmentHistoryAsync(userId);
         //     public async Task<string> AddCrewAsync(CreateUserDto crewDto)
         //     {
         //         if (crewDto == null)

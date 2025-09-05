@@ -36,6 +36,101 @@ public class CrewController : ControllerBase
 
     //viewing and fetch requests.
 
+    [HttpGet("assignment/history/{userId}")]
+    public async Task<IActionResult> GetAssignmentHistory(int userId)
+    {
+        if (userId <= 0) return BadRequest("Invalid user id");
+        var history = await _crewService.GetAssignmentHistoryAsync(userId);
+        return Ok(history);
+    }
+
+    // medical
+    [HttpPost("medical/create")]
+    public async Task<IActionResult> CreateMedical([FromBody] CreateCrewMedicalDto dto)
+    {
+        var res = await _crewService.CreateMedicalAsync(dto);
+        return res > 0 ? Ok("Medical record created") : StatusCode(500, "Failed to create medical record");
+    }
+
+    [HttpPost("medical/update")]
+    public async Task<IActionResult> UpdateMedical([FromBody] CrewMedicalDto dto)
+    {
+        var res = await _crewService.UpdateMedicalAsync(dto);
+        return res > 0 ? Ok("Medical record updated") : NotFound();
+    }
+
+    [HttpPost("medical/search")]
+    public async Task<IActionResult> SearchMedical([FromBody] CrewDocumentSearchDto s)
+    {
+        var res = await _crewService.SearchMedicalAsync(s);
+        return Ok(res);
+    }
+
+    // passports
+    [HttpPost("passport/create")]
+    public async Task<IActionResult> CreatePassport([FromBody] CreateCrewPassportDto dto)
+    {
+        var res = await _crewService.CreatePassportAsync(dto);
+        return res > 0 ? Ok("Passport created") : StatusCode(500, "Failed to create passport");
+    }
+
+    [HttpPost("passport/update")]
+    public async Task<IActionResult> UpdatePassport([FromBody] CrewPassportDto dto)
+    {
+        var res = await _crewService.UpdatePassportAsync(dto);
+        return res > 0 ? Ok("Passport updated") : NotFound();
+    }
+
+    [HttpPost("passport/search")]
+    public async Task<IActionResult> SearchPassports([FromBody] CrewDocumentSearchDto s)
+    {
+        var res = await _crewService.SearchPassportsAsync(s);
+        return Ok(res);
+    }
+
+    // visas
+    [HttpPost("visa/create")]
+    public async Task<IActionResult> CreateVisa([FromBody] CreateCrewVisaDto dto)
+    {
+        var res = await _crewService.CreateVisaAsync(dto);
+        return res > 0 ? Ok("Visa created") : StatusCode(500, "Failed to create visa");
+    }
+
+    [HttpPost("visa/update")]
+    public async Task<IActionResult> UpdateVisa([FromBody] CrewVisaDto dto)
+    {
+        var res = await _crewService.UpdateVisaAsync(dto);
+        return res > 0 ? Ok("Visa updated") : NotFound();
+    }
+
+    [HttpPost("visa/search")]
+    public async Task<IActionResult> SearchVisas([FromBody] CrewDocumentSearchDto s)
+    {
+        var res = await _crewService.SearchVisasAsync(s);
+        return Ok(res);
+    }
+
+    // crew reports
+    [HttpPost("report/create")]
+    public async Task<IActionResult> CreateReport([FromBody] CreateCrewReportDto dto)
+    {
+        var res = await _crewService.CreateCrewReportAsync(dto);
+        return res > 0 ? Ok("Report created") : StatusCode(500, "Failed to create report");
+    }
+
+    [HttpPost("report/update")]
+    public async Task<IActionResult> UpdateReport([FromBody] CrewReportDto dto)
+    {
+        var res = await _crewService.UpdateCrewReportAsync(dto);
+        return res > 0 ? Ok("Report updated") : NotFound();
+    }
+
+    [HttpGet("report/search")]
+    public async Task<IActionResult> SearchReports([FromQuery] int? userId, [FromQuery] string? reportType, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var res = await _crewService.SearchCrewReportsAsync(userId, reportType, page, pageSize);
+        return Ok(res);
+    }
 
     //deletions
 

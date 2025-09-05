@@ -32,6 +32,10 @@ namespace ASCO.DbContext
         public DbSet<Inspection> Inspections { get; set; }
         public DbSet<ShipAssignment> ShipAssignments { get; set; }
         public DbSet<CrewCertification> CrewCertifications { get; set; }
+        public DbSet<CrewMedicalRecord> CrewMedicalRecords { get; set; }
+        public DbSet<CrewPassport> CrewPassports { get; set; }
+        public DbSet<CrewVisa> CrewVisas { get; set; }
+        public DbSet<CrewReport> CrewReports { get; set; }
         //public DbSet<AuditLog> AuditLogs { get; set; }
 
         //on model creating method
@@ -188,7 +192,33 @@ namespace ASCO.DbContext
             .HasIndex(p => p.Name)
             .IsUnique();
 
-            
+            // crew medical
+            modelBuilder.Entity<CrewMedicalRecord>()
+            .HasOne(m => m.User)
+            .WithMany()
+            .HasForeignKey(m => m.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            // crew passport
+            modelBuilder.Entity<CrewPassport>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            // crew visa
+            modelBuilder.Entity<CrewVisa>()
+            .HasOne(v => v.User)
+            .WithMany()
+            .HasForeignKey(v => v.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            // crew reports
+            modelBuilder.Entity<CrewReport>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
 
         }
