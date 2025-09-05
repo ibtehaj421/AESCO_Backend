@@ -13,62 +13,88 @@ public class CrewController : ControllerBase
         _crewService = crewService;
     }
 
-    [HttpGet("all")]
-    public async Task<IActionResult> GetAllCrews()
-    {
-        var crews = await _crewService.GetAllCrewsAsync();
-        return Ok(crews);
-    }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetCrewById(int id)
-    {
-        var crew = await _crewService.GetCrewByIdAsync(id);
-        if (crew == null)
-        {
-            return NotFound();
-        }
-        return Ok(crew);
-    }
-
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateCrew([FromBody] CreateCrewDto crewDto)
+    //updations
+    [HttpPost("update")]
+    public async Task<IActionResult> UpdateCrew([FromBody] UpdateUserDto crewDto)
     {
         if (crewDto == null)
         {
             return BadRequest("Invalid crew data.");
         }
 
-        var createdCrew = await _crewService.CreateCrewAsync(crewDto);
-        return CreatedAtAction(nameof(GetCrewById), new { id = createdCrew.Id }, createdCrew);
-    }
+        var updatedCrew = await _crewService.UpdateCrewAsync(crewDto);
+        //if value not positive or less than 1, something went wrong
 
-    [HttpPut("update/{id}")]
-    public async Task<IActionResult> UpdateCrew(int id, [FromBody] UpdateCrewDto crewDto)
-    {
-        if (crewDto == null || id != crewDto.Id)
-        {
-            return BadRequest("Invalid crew data.");
-        }
-
-        var updatedCrew = await _crewService.UpdateCrewAsync(id, crewDto);
-        if (updatedCrew == null)
+        if (updatedCrew < 1)
         {
             return NotFound();
         }
 
-        return Ok(updatedCrew);
+        return Ok("Value has been updated successfully.");
     }
 
-    [HttpDelete("delete/{id}")]
-    public async Task<IActionResult> DeleteCrew(int id)
+    //viewing and fetch requests.
+
+
+    //deletions
+
+
+    //assignments and management
+    [HttpPost("vessel/assign")]
+    public async Task<IActionResult> AssignCrewToVessel([FromBody] AssignmentDTO assignDto)
     {
-        var result = await _crewService.DeleteCrewAsync(id);
-        if (!result)
+        if (assignDto == null)
         {
-            return NotFound();
+            return BadRequest("Invalid assignment data.");
         }
 
-        return NoContent();
+        var result = await _crewService.AssignCrewToVesselAsync(assignDto);
+        if (result > 0)
+        {
+            return Ok("Crew assigned to vessel successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while assigning the crew to the vessel.");
+        }
+    }
+
+    [HttpPatch("vessel/unassign/{id}")] //adds the unassignment endpoint date. and when the date exceeeds, we will cater to that later.
+    public async Task<IActionResult> UnassignCrewFromVessel(int id, [FromBody] DateTime unassignDto)
+    {
+        if (id == 0)
+        {
+            return BadRequest("Invalid unassignment data.");
+        }
+
+        var result = await _crewService.UnassignCrewFromVesselAsync(id, unassignDto);
+        if (result > 0)
+        {
+            return Ok("Unassignment date added to crew member from vessel successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while unassigning the crew from the vessel.");
+        }
+    }
+
+    [HttpPost("vessel/update-assignment")]
+    public async Task<IActionResult> UpdateAssignmentDetails([FromBody] AssignmentDTO updateDto)
+    {
+        if (updateDto == null || updateDto.CrewId <= 0 || updateDto.VesselId <= 0)
+        {
+            return BadRequest("Invalid assignment update data.");
+        }
+
+        var result = await _crewService.UpdateAssignmentDetailsAsync(updateDto);
+        if (result > 0)
+        {
+            return Ok("Assignment details updated successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while updating the assignment details.");
+        }
     }
 }

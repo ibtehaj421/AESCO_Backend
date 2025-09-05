@@ -25,7 +25,10 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RoleRepository>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
-
+builder.Services.AddScoped<CrewRepository>();
+builder.Services.AddScoped<CrewService>();
+builder.Services.AddScoped<VesselRepository>();
+builder.Services.AddScoped<VesselService>();
 //jwt add ons go here.
 builder.Services.AddScoped<JwtServices>();
 var jwtKey = builder.Configuration["Jwt:Key"];

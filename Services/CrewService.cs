@@ -16,58 +16,191 @@ namespace ASCO.Services
             _userRepository = userRepository;
         }
 
-        public async Task<string> AddCrewAsync(CreateUserDto crewDto)
+
+        //updations
+        public async Task<int> UpdateCrewAsync(UpdateUserDto userDto)
         {
-            if (crewDto == null)
+            var user = await _userRepository.GetUserByIdAsync(userDto.Id);
+            //store all values in a user object
+            if (user != null)
             {
-                return "Invalid crew data.";
+                // Basic Information - stored directly in Users table
+                user.Name = userDto.Name;
+                user.Surname = userDto.Surname;
+                user.Nationality = userDto.Nationality;
+                user.IdenNumber = Convert.ToInt64(userDto.IdenNumber);
+                user.DateOfBirth = userDto.DateOfBirth;
+                user.BirthPlace = userDto.BirthPlace;
+                user.Gender = userDto.Gender;
+
+                //employment details
+                user.JobType = userDto.JobType;
+                user.Rank = userDto.Rank;
+                user.MaritalStatus = userDto.MaritalStatus;
+                user.MilitaryStatus = userDto.MilitaryStatus;
+
+                //education details
+                user.EducationLevel = userDto.EducationLevel;
+                user.GraduationYear = Convert.ToInt32(userDto.GraduationYear);
+                user.School = userDto.School;
+
+                //professsional details
+                user.Competency = userDto.Competency;
+                user.OrganizationUnit = userDto.OrganizationUnit;
+
+                //contact details
+                user.Email = userDto.Email;
+                //PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password), // Hash the password before
+
+                //family details
+                user.FatherName = userDto.FatherName;
+
+                //Status and timestamps
+                user.Status = userDto.Status ?? "pending"; // Default status or admin assigned
+                user.CreatedAt = DateTime.UtcNow;
+                user.WorkEndDate = userDto.WorkEndDate;
+
+                //security logs
+                //FailedLoginAttempts = 0,
+                // = false
+
+            }
+            ;
+            int value = await _crewRepository.UpdateCrewAsync(user!);
+            return value;
+        }
+
+        //assign a crew member to a vessel.
+        public async Task<int> AssignCrewToVesselAsync(AssignmentDTO assignDto)
+        {
+            // Check if the crew member exists
+            var crewMember = await _userRepository.GetUserByIdAsync(assignDto.CrewId);
+            if (crewMember == null)
+            {
+                return 0; // Crew member not found
             }
 
-            var crew = new User
+            // Create a new assignment
+            var assignment = new ShipAssignment
             {
-               
+                ShipId = assignDto.VesselId,
+                UserId = assignDto.CrewId,
+                Position = crewMember.Rank ?? "Crew Member", // Default position if rank is null
+                AssignedAt = DateTime.UtcNow,
+                UnassignedAt = assignDto.EndDate ?? null, //no value is assigned yet.
+                Status = "active", // Default status
+                AssignedByUserId = assignDto.AssignedByUserId,
+                Notes = assignDto.Notes
             };
 
-            var result = await _crewRepository.AddCrewAsync(crew);
-            return result > 0 ? "Crew added successfully." : "Failed to add crew.";
+            int result = await _crewRepository.AssignCrewToVesselAsync(assignment);
+            return result;
         }
 
-        public async Task<List<Crew>> GetAllCrewsAsync()
+        //unassing a crew member from a vessel.
+        public async Task<int> UnassignCrewFromVesselAsync(int id, DateTime unassignDto)
         {
-            return await _crewRepository.GetAllCrewsAsync();
-        }
-
-        public async Task<Crew?> GetCrewByIdAsync(int crewId)
-        {
-            return await _crewRepository.GetCrewByIdAsync(crewId);
-        }
-
-        public async Task<string> UpdateCrewAsync(int crewId, UpdateCrewDto crewDto)
-        {
-            var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
-            if (existingCrew == null)
+            // Find the active assignment for the crew member
+            var activeAssignment = await _crewRepository.GetActiveAssignmentById(id);
+            if (activeAssignment == null)
             {
-                return "Crew not found.";
+                Console.WriteLine("No active assignment found for the given ID.");
+                return 0; // No active assignment found
             }
 
-            existingCrew.Name = crewDto.Name ?? existingCrew.Name;
-            existingCrew.Description = crewDto.Description ?? existingCrew.Description;
-            existingCrew.UpdatedAt = DateTime.UtcNow;
+            // Update the assignment to mark it as unassigned
+            activeAssignment.UnassignedAt = unassignDto;
+            activeAssignment.Status = "active";
+            if (activeAssignment.UnassignedAt > DateTime.UtcNow)
+            {
+                activeAssignment.Status = "inactive"; // Set to provided end date if it's earlier
+            }
+            //activeAssignment.Status = "inactive"; // Mark as inactive
 
-            var result = await _crewRepository.UpdateCrewAsync(existingCrew);
-            return result > 0 ? "Crew updated successfully." : "Failed to update crew.";
+            int result = await _crewRepository.UnassignCrewFromVesselAsync(activeAssignment);
+            return result;
         }
 
-        public async Task<string> DeleteCrewAsync(int crewId)
+        //update assignment details - end date and notes, contains more info
+        public async Task<int> UpdateAssignmentDetailsAsync(AssignmentDTO updateDto)
         {
-            var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
-            if (existingCrew == null)
+            // Find the active assignment for the crew member
+            var activeAssignment = await _crewRepository.GetActiveAssignmentById(updateDto.id);
+            if (activeAssignment == null)
             {
-                return "Crew not found.";
+                return 0; // No active assignment found
             }
 
-            var result = await _crewRepository.DeleteCrewAsync(existingCrew);
-            return result > 0 ? "Crew deleted successfully." : "Failed to delete crew.";
+            // Update the assignment details
+            activeAssignment.AssignedAt = updateDto.AssignmentDate ?? activeAssignment.AssignedAt;
+            activeAssignment.UnassignedAt = updateDto.EndDate ?? activeAssignment.UnassignedAt;
+            activeAssignment.Notes = updateDto.Notes ?? activeAssignment.Notes;
+            if (activeAssignment.UnassignedAt.HasValue && activeAssignment.UnassignedAt <= DateTime.UtcNow)
+            {
+                activeAssignment.Status = "inactive"; // Set to inactive if end date has passed
+            }
+            else
+            {
+                activeAssignment.Status = "active"; // Otherwise, keep it active
+            }
+
+
+            int result = await _crewRepository.UnassignCrewFromVesselAsync(activeAssignment);
+            return result;
         }
+        //     public async Task<string> AddCrewAsync(CreateUserDto crewDto)
+        //     {
+        //         if (crewDto == null)
+        //         {
+        //             return "Invalid crew data.";
+        //         }
+
+        //         var crew = new User
+        //         {
+
+        //         };
+
+        //         var result = await _crewRepository.AddCrewAsync(crew);
+        //         return result > 0 ? "Crew added successfully." : "Failed to add crew.";
+        //     }
+
+        //     public async Task<List<Crew>> GetAllCrewsAsync()
+        //     {
+        //         return await _crewRepository.GetAllCrewsAsync();
+        //     }
+
+        //     public async Task<Crew?> GetCrewByIdAsync(int crewId)
+        //     {
+        //         return await _crewRepository.GetCrewByIdAsync(crewId);
+        //     }
+
+        //     public async Task<string> UpdateCrewAsync(int crewId, UpdateCrewDto crewDto)
+        //     {
+        //         var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
+        //         if (existingCrew == null)
+        //         {
+        //             return "Crew not found.";
+        //         }
+
+        //         existingCrew.Name = crewDto.Name ?? existingCrew.Name;
+        //         existingCrew.Description = crewDto.Description ?? existingCrew.Description;
+        //         existingCrew.UpdatedAt = DateTime.UtcNow;
+
+        //         var result = await _crewRepository.UpdateCrewAsync(existingCrew);
+        //         return result > 0 ? "Crew updated successfully." : "Failed to update crew.";
+        //     }
+
+        //     public async Task<string> DeleteCrewAsync(int crewId)
+        //     {
+        //         var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
+        //         if (existingCrew == null)
+        //         {
+        //             return "Crew not found.";
+        //         }
+
+        //         var result = await _crewRepository.DeleteCrewAsync(existingCrew);
+        //         return result > 0 ? "Crew deleted successfully." : "Failed to delete crew.";
+        //     }
     }
+    
 }

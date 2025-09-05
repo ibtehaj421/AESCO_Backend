@@ -128,7 +128,7 @@ namespace ASCO.Models
         public string Position { get; set; } = string.Empty; // Captain, Engineer, Navigator, etc.
 
         [Required]
-        public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? AssignedAt { get; set; }
 
         public DateTime? UnassignedAt { get; set; }
 

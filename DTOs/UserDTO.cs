@@ -97,13 +97,13 @@ public class UpdateUserDto : BaseUserDto
     public int Id { get; set; }
 
     // Optional password change
-    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
-    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]", 
-        ErrorMessage = "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character")]
-    public string? Password { get; set; }
+    // [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
+    // [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&+$]", 
+    //     ErrorMessage = "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character")]
+    // public string? Password { get; set; }
 
-    [Compare("Password", ErrorMessage = "Passwords do not match")]
-    public string? ConfirmPassword { get; set; }
+
+    public List<int> RoleIds { get; set; } = new List<int>();
 
     // Status can be updated
     [StringLength(20, ErrorMessage = "Status cannot exceed 20 characters")]
