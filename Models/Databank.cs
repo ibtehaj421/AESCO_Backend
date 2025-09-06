@@ -5,9 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ASCO.Models
 {
-    // [Table("CrewModuleDatabank")]
-    // public class CrewModuleDatabank
-    // {
-    //     //alot of stuff will go here.
-    // }
+    public class CrewModuleMain
+    {
+        public int Id { get; set; }
+        public string? FieldName { get; set; } // Made nullable
+
+        // Navigation property for related databank entries
+        public ICollection<CrewModuleDatabank> Databanks { get; set; } = new List<CrewModuleDatabank>(); // Initialized collection
+    }
+
+    public class CrewModuleDatabank
+    {
+        public int Id { get; set; }
+        public int FieldId { get; set; }
+        public string? SubTypeName { get; set; } // Made nullable
+
+        // Navigation property for the main field
+        public CrewModuleMain? Field { get; set; } // Made nullable
+    }
 }

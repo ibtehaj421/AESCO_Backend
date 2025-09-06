@@ -45,8 +45,16 @@ namespace ASCO.DbContext
         public DbSet<Incident> Incidents { get; set; }
         public DbSet<StatementOfCash> CashStatements { get; set; }
 
-        //on model creating method
+        // Performance and Work Rest Hours
+        public DbSet<CrewTraining> CrewTrainings { get; set; }
+        public DbSet<CrewEvaluation> CrewEvaluations { get; set; }
+        public DbSet<CrewWorkRestHours> CrewWorkRestHours { get; set; }
 
+        //crew module
+        public DbSet<CrewModuleMain> CrewModuleMains { get; set; }
+        public DbSet<CrewModuleDatabank> CrewModuleDatabanks { get; set; }
+
+        //on model creating method
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -250,6 +258,75 @@ namespace ASCO.DbContext
             
             //cash statements
 
+            //crew training configuration
+            modelBuilder.Entity<CrewTraining>()
+            .HasOne(ct => ct.User)
+            .WithMany()
+            .HasForeignKey(ct => ct.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewTraining>()
+            .HasOne(ct => ct.Vessel)
+            .WithMany()
+            .HasForeignKey(ct => ct.VesselId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewTraining>()
+            .HasOne(ct => ct.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(ct => ct.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            //crew evaluation configuration
+            modelBuilder.Entity<CrewEvaluation>()
+            .HasOne(ce => ce.User)
+            .WithMany()
+            .HasForeignKey(ce => ce.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewEvaluation>()
+            .HasOne(ce => ce.Vessel)
+            .WithMany()
+            .HasForeignKey(ce => ce.VesselId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewEvaluation>()
+            .HasOne(ce => ce.EnteredBy)
+            .WithMany()
+            .HasForeignKey(ce => ce.EnteredByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewEvaluation>()
+            .HasOne(ce => ce.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(ce => ce.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            //crew work rest hours configuration
+            modelBuilder.Entity<CrewWorkRestHours>()
+            .HasOne(cwrh => cwrh.User)
+            .WithMany()
+            .HasForeignKey(cwrh => cwrh.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewWorkRestHours>()
+            .HasOne(cwrh => cwrh.Vessel)
+            .WithMany()
+            .HasForeignKey(cwrh => cwrh.VesselId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CrewWorkRestHours>()
+            .HasOne(cwrh => cwrh.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(cwrh => cwrh.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            //crew module databank configuration
+            modelBuilder.Entity<CrewModuleDatabank>()
+                .HasOne(cmd => cmd.Field)
+                .WithMany(cm => cm.Databanks)
+                .HasForeignKey(cmd => cmd.FieldId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

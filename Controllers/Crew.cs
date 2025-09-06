@@ -306,4 +306,108 @@ public class CrewController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the vessel manning record(s).");
         }
     }
+
+    // Crew Training endpoints
+    [HttpPost("training/create")]
+    public async Task<IActionResult> CreateCrewTraining([FromBody] CreateCrewTrainingDto dto)
+    {
+        if (dto == null || dto.UserId <= 0 || dto.VesselId <= 0)
+        {
+            return BadRequest("Invalid training data.");
+        }
+
+        var result = await _crewService.CreateCrewTrainingAsync(dto);
+        return result > 0 ? Ok("Training record created successfully.") : StatusCode(500, "Failed to create training record.");
+    }
+
+    [HttpPost("training/update")]
+    public async Task<IActionResult> UpdateCrewTraining([FromBody] UpdateCrewTrainingDto dto)
+    {
+        if (dto == null || dto.Id <= 0)
+        {
+            return BadRequest("Invalid training update data.");
+        }
+
+        var result = await _crewService.UpdateCrewTrainingAsync(dto);
+        return result > 0 ? Ok("Training record updated successfully.") : NotFound("Training record not found.");
+    }
+
+    [HttpPost("training/search")]
+    public async Task<IActionResult> SearchCrewTrainings([FromBody] CrewTrainingSearchDto searchDto)
+    {
+        var result = await _crewService.SearchCrewTrainingsAsync(searchDto);
+        return Ok(result);
+    }
+
+    // Crew Evaluation endpoints
+    [HttpPost("evaluation/create")]
+    public async Task<IActionResult> CreateCrewEvaluation([FromBody] CreateCrewEvaluationDto dto)
+    {
+        if (dto == null || dto.UserId <= 0 || dto.VesselId <= 0)
+        {
+            return BadRequest("Invalid evaluation data.");
+        }
+
+        var result = await _crewService.CreateCrewEvaluationAsync(dto);
+        return result > 0 ? Ok("Evaluation record created successfully.") : StatusCode(500, "Failed to create evaluation record.");
+    }
+
+    [HttpPost("evaluation/update")]
+    public async Task<IActionResult> UpdateCrewEvaluation([FromBody] UpdateCrewEvaluationDto dto)
+    {
+        if (dto == null || dto.Id <= 0)
+        {
+            return BadRequest("Invalid evaluation update data.");
+        }
+
+        var result = await _crewService.UpdateCrewEvaluationAsync(dto);
+        return result > 0 ? Ok("Evaluation record updated successfully.") : NotFound("Evaluation record not found.");
+    }
+
+    [HttpPost("evaluation/search")]
+    public async Task<IActionResult> SearchCrewEvaluations([FromBody] CrewEvaluationSearchDto searchDto)
+    {
+        var result = await _crewService.SearchCrewEvaluationsAsync(searchDto);
+        return Ok(result);
+    }
+
+    // Crew Work Rest Hours endpoints
+    [HttpPost("work-rest-hours/create")]
+    public async Task<IActionResult> CreateCrewWorkRestHours([FromBody] CreateCrewWorkRestHoursDto dto)
+    {
+        if (dto == null || dto.UserId <= 0 || dto.VesselId <= 0)
+        {
+            return BadRequest("Invalid work rest hours data.");
+        }
+
+        var result = await _crewService.CreateCrewWorkRestHoursAsync(dto);
+        return result > 0 ? Ok("Work rest hours record created successfully.") : StatusCode(500, "Failed to create work rest hours record.");
+    }
+
+    [HttpPost("work-rest-hours/update")]
+    public async Task<IActionResult> UpdateCrewWorkRestHours([FromBody] UpdateCrewWorkRestHoursDto dto)
+    {
+        if (dto == null || dto.Id <= 0)
+        {
+            return BadRequest("Invalid work rest hours update data.");
+        }
+
+        var result = await _crewService.UpdateCrewWorkRestHoursAsync(dto);
+        return result > 0 ? Ok("Work rest hours record updated successfully.") : NotFound("Work rest hours record not found.");
+    }
+
+    [HttpPost("work-rest-hours/search")]
+    public async Task<IActionResult> SearchCrewWorkRestHours([FromBody] CrewWorkRestHoursSearchDto searchDto)
+    {
+        var result = await _crewService.SearchCrewWorkRestHoursAsync(searchDto);
+        return Ok(result);
+    }
+
+    [HttpGet("work-rest-hours/user/{userId}")]
+    public async Task<IActionResult> GetCrewWorkRestHoursByUser(int userId, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    {
+        if (userId <= 0) return BadRequest("Invalid user id");
+        var result = await _crewService.GetCrewWorkRestHoursByUserAsync(userId, fromDate, toDate);
+        return Ok(result);
+    }
 }

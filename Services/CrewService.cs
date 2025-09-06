@@ -355,6 +355,183 @@ namespace ASCO.Services
             return await _crewRepository.AddCashStatementAsync(rec);
         }
 
+        // Crew Training methods
+        public async Task<int> CreateCrewTrainingAsync(CreateCrewTrainingDto dto)
+        {
+            var training = new CrewTraining
+            {
+                UserId = dto.UserId,
+                VesselId = dto.VesselId,
+                TrainingCategory = dto.TrainingCategory,
+                Rank = dto.Rank,
+                Trainer = dto.Trainer,
+                Remark = dto.Remark,
+                Training = dto.Training,
+                Source = dto.Source,
+                TrainingDate = dto.TrainingDate,
+                ExpireDate = dto.ExpireDate,
+                Status = dto.Status,
+                Attachments = dto.Attachments,
+                CreatedByUserId = 1, // TODO: Get from current user context
+                CreatedAt = DateTime.UtcNow
+            };
+            return await _crewRepository.AddCrewTrainingAsync(training);
+        }
+
+        public async Task<int> UpdateCrewTrainingAsync(UpdateCrewTrainingDto dto)
+        {
+            var existing = await _crewRepository.GetCrewTrainingByIdAsync(dto.Id);
+            if (existing == null) return 0;
+
+            existing.UserId = dto.UserId;
+            existing.VesselId = dto.VesselId;
+            existing.TrainingCategory = dto.TrainingCategory;
+            existing.Rank = dto.Rank;
+            existing.Trainer = dto.Trainer;
+            existing.Remark = dto.Remark;
+            existing.Training = dto.Training;
+            existing.Source = dto.Source;
+            existing.TrainingDate = dto.TrainingDate;
+            existing.ExpireDate = dto.ExpireDate;
+            existing.Status = dto.Status;
+            existing.Attachments = dto.Attachments;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            return await _crewRepository.UpdateCrewTrainingAsync(existing);
+        }
+
+        public Task<List<CrewTraining>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto) => 
+            _crewRepository.SearchCrewTrainingsAsync(searchDto);
+
+        // Crew Evaluation methods
+        public async Task<int> CreateCrewEvaluationAsync(CreateCrewEvaluationDto dto)
+        {
+            var evaluation = new CrewEvaluation
+            {
+                UserId = dto.UserId,
+                VesselId = dto.VesselId,
+                FormNo = dto.FormNo,
+                RevisionNo = dto.RevisionNo,
+                RevisionDate = dto.RevisionDate,
+                FormName = dto.FormName,
+                FormDescription = dto.FormDescription,
+                EnteredByUserId = dto.EnteredByUserId,
+                EnteredDate = dto.EnteredDate,
+                Rank = dto.Rank,
+                Name = dto.Name,
+                Surname = dto.Surname,
+                UniqueId = dto.UniqueId,
+                TechnicalCompetence = dto.TechnicalCompetence,
+                SafetyAwareness = dto.SafetyAwareness,
+                Teamwork = dto.Teamwork,
+                Communication = dto.Communication,
+                Leadership = dto.Leadership,
+                ProblemSolving = dto.ProblemSolving,
+                Adaptability = dto.Adaptability,
+                WorkEthic = dto.WorkEthic,
+                OverallRating = dto.OverallRating,
+                Strengths = dto.Strengths,
+                AreasForImprovement = dto.AreasForImprovement,
+                Comments = dto.Comments,
+                CrewMemberComments = dto.CrewMemberComments,
+                CrewMemberSignature = dto.CrewMemberSignature,
+                CrewMemberSignedDate = dto.CrewMemberSignedDate,
+                Status = dto.Status,
+                Attachments = dto.Attachments,
+                CreatedByUserId = 1, // TODO: Get from current user context
+                CreatedAt = DateTime.UtcNow
+            };
+            return await _crewRepository.AddCrewEvaluationAsync(evaluation);
+        }
+
+        public async Task<int> UpdateCrewEvaluationAsync(UpdateCrewEvaluationDto dto)
+        {
+            var existing = await _crewRepository.GetCrewEvaluationByIdAsync(dto.Id);
+            if (existing == null) return 0;
+
+            existing.UserId = dto.UserId;
+            existing.VesselId = dto.VesselId;
+            existing.FormNo = dto.FormNo;
+            existing.RevisionNo = dto.RevisionNo;
+            existing.RevisionDate = dto.RevisionDate;
+            existing.FormName = dto.FormName;
+            existing.FormDescription = dto.FormDescription;
+            existing.EnteredByUserId = dto.EnteredByUserId;
+            existing.EnteredDate = dto.EnteredDate;
+            existing.Rank = dto.Rank;
+            existing.Name = dto.Name;
+            existing.Surname = dto.Surname;
+            existing.UniqueId = dto.UniqueId;
+            existing.TechnicalCompetence = dto.TechnicalCompetence;
+            existing.SafetyAwareness = dto.SafetyAwareness;
+            existing.Teamwork = dto.Teamwork;
+            existing.Communication = dto.Communication;
+            existing.Leadership = dto.Leadership;
+            existing.ProblemSolving = dto.ProblemSolving;
+            existing.Adaptability = dto.Adaptability;
+            existing.WorkEthic = dto.WorkEthic;
+            existing.OverallRating = dto.OverallRating;
+            existing.Strengths = dto.Strengths;
+            existing.AreasForImprovement = dto.AreasForImprovement;
+            existing.Comments = dto.Comments;
+            existing.CrewMemberComments = dto.CrewMemberComments;
+            existing.CrewMemberSignature = dto.CrewMemberSignature;
+            existing.CrewMemberSignedDate = dto.CrewMemberSignedDate;
+            existing.Status = dto.Status;
+            existing.Attachments = dto.Attachments;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            return await _crewRepository.UpdateCrewEvaluationAsync(existing);
+        }
+
+        public Task<List<CrewEvaluation>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto) => 
+            _crewRepository.SearchCrewEvaluationsAsync(searchDto);
+
+        // Crew Work Rest Hours methods
+        public async Task<int> CreateCrewWorkRestHoursAsync(CreateCrewWorkRestHoursDto dto)
+        {
+            var workRestHours = new CrewWorkRestHours
+            {
+                UserId = dto.UserId,
+                VesselId = dto.VesselId,
+                Date = dto.Date,
+                WorkHours = dto.WorkHours,
+                RestHours = dto.RestHours,
+                TotalHours = dto.TotalHours,
+                WorkDescription = dto.WorkDescription,
+                RestDescription = dto.RestDescription,
+                Notes = dto.Notes,
+                CreatedByUserId = 1, // TODO: Get from current user context
+                CreatedAt = DateTime.UtcNow
+            };
+            return await _crewRepository.AddCrewWorkRestHoursAsync(workRestHours);
+        }
+
+        public async Task<int> UpdateCrewWorkRestHoursAsync(UpdateCrewWorkRestHoursDto dto)
+        {
+            var existing = await _crewRepository.GetCrewWorkRestHoursByIdAsync(dto.Id);
+            if (existing == null) return 0;
+
+            existing.UserId = dto.UserId;
+            existing.VesselId = dto.VesselId;
+            existing.Date = dto.Date;
+            existing.WorkHours = dto.WorkHours;
+            existing.RestHours = dto.RestHours;
+            existing.TotalHours = dto.TotalHours;
+            existing.WorkDescription = dto.WorkDescription;
+            existing.RestDescription = dto.RestDescription;
+            existing.Notes = dto.Notes;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            return await _crewRepository.UpdateCrewWorkRestHoursAsync(existing);
+        }
+
+        public Task<List<CrewWorkRestHours>> SearchCrewWorkRestHoursAsync(CrewWorkRestHoursSearchDto searchDto) => 
+            _crewRepository.SearchCrewWorkRestHoursAsync(searchDto);
+
+        public Task<List<CrewWorkRestHours>> GetCrewWorkRestHoursByUserAsync(int userId, DateTime? fromDate = null, DateTime? toDate = null) => 
+            _crewRepository.GetCrewWorkRestHoursByUserAsync(userId, fromDate, toDate);
+
     }
     
 }

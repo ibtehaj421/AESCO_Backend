@@ -245,6 +245,240 @@ namespace ASCO.Repositories
             await _context.CashStatements.AddAsync(soc);
             return await _context.SaveChangesAsync();
         }
+
+        // Crew Training methods
+        public async Task<int> AddCrewTrainingAsync(CrewTraining training)
+        {
+            await _context.CrewTrainings.AddAsync(training);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> UpdateCrewTrainingAsync(CrewTraining training)
+        {
+            _context.CrewTrainings.Update(training);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<CrewTraining?> GetCrewTrainingByIdAsync(int id)
+        {
+            return await _context.CrewTrainings
+                .Include(ct => ct.User)
+                .Include(ct => ct.Vessel)
+                .Include(ct => ct.CreatedByUser)
+                .FirstOrDefaultAsync(ct => ct.Id == id);
+        }
+
+        public async Task<List<CrewTraining>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto)
+        {
+            var query = _context.CrewTrainings
+                .Include(ct => ct.User)
+                .Include(ct => ct.Vessel)
+                .Include(ct => ct.CreatedByUser)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchDto.SearchTerm))
+            {
+                query = query.Where(ct => 
+                    ct.Training.Contains(searchDto.SearchTerm) ||
+                    ct.TrainingCategory.Contains(searchDto.SearchTerm) ||
+                    ct.Trainer.Contains(searchDto.SearchTerm) ||
+                    ct.User.Name.Contains(searchDto.SearchTerm) ||
+                    ct.User.Surname.Contains(searchDto.SearchTerm) ||
+                    ct.Vessel.Name.Contains(searchDto.SearchTerm));
+            }
+
+            if (searchDto.UserId.HasValue)
+                query = query.Where(ct => ct.UserId == searchDto.UserId.Value);
+
+            if (searchDto.VesselId.HasValue)
+                query = query.Where(ct => ct.VesselId == searchDto.VesselId.Value);
+
+            if (!string.IsNullOrEmpty(searchDto.TrainingCategory))
+                query = query.Where(ct => ct.TrainingCategory == searchDto.TrainingCategory);
+
+            if (!string.IsNullOrEmpty(searchDto.Status))
+                query = query.Where(ct => ct.Status == searchDto.Status);
+
+            if (searchDto.TrainingDateFrom.HasValue)
+                query = query.Where(ct => ct.TrainingDate >= searchDto.TrainingDateFrom.Value);
+
+            if (searchDto.TrainingDateTo.HasValue)
+                query = query.Where(ct => ct.TrainingDate <= searchDto.TrainingDateTo.Value);
+
+            if (searchDto.ExpireDateFrom.HasValue)
+                query = query.Where(ct => ct.ExpireDate >= searchDto.ExpireDateFrom.Value);
+
+            if (searchDto.ExpireDateTo.HasValue)
+                query = query.Where(ct => ct.ExpireDate <= searchDto.ExpireDateTo.Value);
+
+            // Apply sorting
+            query = searchDto.SortBy.ToLower() switch
+            {
+                "trainingdate" => searchDto.SortDescending ? query.OrderByDescending(ct => ct.TrainingDate) : query.OrderBy(ct => ct.TrainingDate),
+                "expiredate" => searchDto.SortDescending ? query.OrderByDescending(ct => ct.ExpireDate) : query.OrderBy(ct => ct.ExpireDate),
+                "training" => searchDto.SortDescending ? query.OrderByDescending(ct => ct.Training) : query.OrderBy(ct => ct.Training),
+                "status" => searchDto.SortDescending ? query.OrderByDescending(ct => ct.Status) : query.OrderBy(ct => ct.Status),
+                _ => searchDto.SortDescending ? query.OrderByDescending(ct => ct.CreatedAt) : query.OrderBy(ct => ct.CreatedAt)
+            };
+
+            return await query
+                .Skip((searchDto.Page - 1) * searchDto.PageSize)
+                .Take(searchDto.PageSize)
+                .ToListAsync();
+        }
+
+        // Crew Evaluation methods
+        public async Task<int> AddCrewEvaluationAsync(CrewEvaluation evaluation)
+        {
+            await _context.CrewEvaluations.AddAsync(evaluation);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> UpdateCrewEvaluationAsync(CrewEvaluation evaluation)
+        {
+            _context.CrewEvaluations.Update(evaluation);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<CrewEvaluation?> GetCrewEvaluationByIdAsync(int id)
+        {
+            return await _context.CrewEvaluations
+                .Include(ce => ce.User)
+                .Include(ce => ce.Vessel)
+                .Include(ce => ce.EnteredBy)
+                .Include(ce => ce.CreatedByUser)
+                .FirstOrDefaultAsync(ce => ce.Id == id);
+        }
+
+        public async Task<List<CrewEvaluation>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto)
+        {
+            var query = _context.CrewEvaluations
+                .Include(ce => ce.User)
+                .Include(ce => ce.Vessel)
+                .Include(ce => ce.EnteredBy)
+                .Include(ce => ce.CreatedByUser)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchDto.SearchTerm))
+            {
+                query = query.Where(ce => 
+                    ce.FormName.Contains(searchDto.SearchTerm) ||
+                    ce.FormNo.Contains(searchDto.SearchTerm) ||
+                    ce.User.Name.Contains(searchDto.SearchTerm) ||
+                    ce.User.Surname.Contains(searchDto.SearchTerm) ||
+                    ce.Vessel.Name.Contains(searchDto.SearchTerm));
+            }
+
+            if (searchDto.UserId.HasValue)
+                query = query.Where(ce => ce.UserId == searchDto.UserId.Value);
+
+            if (searchDto.VesselId.HasValue)
+                query = query.Where(ce => ce.VesselId == searchDto.VesselId.Value);
+
+            if (!string.IsNullOrEmpty(searchDto.Status))
+                query = query.Where(ce => ce.Status == searchDto.Status);
+
+            if (searchDto.EnteredDateFrom.HasValue)
+                query = query.Where(ce => ce.EnteredDate >= searchDto.EnteredDateFrom.Value);
+
+            if (searchDto.EnteredDateTo.HasValue)
+                query = query.Where(ce => ce.EnteredDate <= searchDto.EnteredDateTo.Value);
+
+            if (searchDto.MinOverallRating.HasValue)
+                query = query.Where(ce => ce.OverallRating >= searchDto.MinOverallRating.Value);
+
+            if (searchDto.MaxOverallRating.HasValue)
+                query = query.Where(ce => ce.OverallRating <= searchDto.MaxOverallRating.Value);
+
+            // Apply sorting
+            query = searchDto.SortBy.ToLower() switch
+            {
+                "entereddate" => searchDto.SortDescending ? query.OrderByDescending(ce => ce.EnteredDate) : query.OrderBy(ce => ce.EnteredDate),
+                "overallrating" => searchDto.SortDescending ? query.OrderByDescending(ce => ce.OverallRating) : query.OrderBy(ce => ce.OverallRating),
+                "formname" => searchDto.SortDescending ? query.OrderByDescending(ce => ce.FormName) : query.OrderBy(ce => ce.FormName),
+                "status" => searchDto.SortDescending ? query.OrderByDescending(ce => ce.Status) : query.OrderBy(ce => ce.Status),
+                _ => searchDto.SortDescending ? query.OrderByDescending(ce => ce.CreatedAt) : query.OrderBy(ce => ce.CreatedAt)
+            };
+
+            return await query
+                .Skip((searchDto.Page - 1) * searchDto.PageSize)
+                .Take(searchDto.PageSize)
+                .ToListAsync();
+        }
+
+        // Crew Work Rest Hours methods
+        public async Task<int> AddCrewWorkRestHoursAsync(CrewWorkRestHours workRestHours)
+        {
+            await _context.CrewWorkRestHours.AddAsync(workRestHours);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> UpdateCrewWorkRestHoursAsync(CrewWorkRestHours workRestHours)
+        {
+            _context.CrewWorkRestHours.Update(workRestHours);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<CrewWorkRestHours?> GetCrewWorkRestHoursByIdAsync(int id)
+        {
+            return await _context.CrewWorkRestHours
+                .Include(cwrh => cwrh.User)
+                .Include(cwrh => cwrh.Vessel)
+                .Include(cwrh => cwrh.CreatedByUser)
+                .FirstOrDefaultAsync(cwrh => cwrh.Id == id);
+        }
+
+        public async Task<List<CrewWorkRestHours>> SearchCrewWorkRestHoursAsync(CrewWorkRestHoursSearchDto searchDto)
+        {
+            var query = _context.CrewWorkRestHours
+                .Include(cwrh => cwrh.User)
+                .Include(cwrh => cwrh.Vessel)
+                .Include(cwrh => cwrh.CreatedByUser)
+                .AsQueryable();
+
+            if (searchDto.UserId.HasValue)
+                query = query.Where(cwrh => cwrh.UserId == searchDto.UserId.Value);
+
+            if (searchDto.VesselId.HasValue)
+                query = query.Where(cwrh => cwrh.VesselId == searchDto.VesselId.Value);
+
+            if (searchDto.DateFrom.HasValue)
+                query = query.Where(cwrh => cwrh.Date >= searchDto.DateFrom.Value);
+
+            if (searchDto.DateTo.HasValue)
+                query = query.Where(cwrh => cwrh.Date <= searchDto.DateTo.Value);
+
+            // Apply sorting
+            query = searchDto.SortBy.ToLower() switch
+            {
+                "date" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.Date) : query.OrderBy(cwrh => cwrh.Date),
+                "workhours" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.WorkHours) : query.OrderBy(cwrh => cwrh.WorkHours),
+                "resthours" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.RestHours) : query.OrderBy(cwrh => cwrh.RestHours),
+                _ => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.CreatedAt) : query.OrderBy(cwrh => cwrh.CreatedAt)
+            };
+
+            return await query
+                .Skip((searchDto.Page - 1) * searchDto.PageSize)
+                .Take(searchDto.PageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<CrewWorkRestHours>> GetCrewWorkRestHoursByUserAsync(int userId, DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            var query = _context.CrewWorkRestHours
+                .Include(cwrh => cwrh.User)
+                .Include(cwrh => cwrh.Vessel)
+                .Include(cwrh => cwrh.CreatedByUser)
+                .Where(cwrh => cwrh.UserId == userId);
+
+            if (fromDate.HasValue)
+                query = query.Where(cwrh => cwrh.Date >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(cwrh => cwrh.Date <= toDate.Value);
+
+            return await query.OrderByDescending(cwrh => cwrh.Date).ToListAsync();
+        }
     }
 
     //rest of the stuff goes here.
