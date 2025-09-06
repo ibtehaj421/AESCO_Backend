@@ -6,7 +6,7 @@ A **.NET 8 Web API** for managing users, organizations, and JWT-based authentica
 ---
 
 ## 📂 Project Structure
-/TEZ ├── Controllers/ ├── DbContext/ ├── Models/ ├── Repositories/ ├── Services/ └── Program.cs
+/AESCO ├── Controllers/ ├── DbContext/ ├── Models/ ├── Repositories/ ├── Services/ └── Program.cs
 
 
 ---
