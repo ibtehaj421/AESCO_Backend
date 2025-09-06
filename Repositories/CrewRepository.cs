@@ -181,6 +181,70 @@ namespace ASCO.Repositories
                 .OrderByDescending(a => a.AssignedAt)
                 .ToListAsync();
         }
+
+        //vessel manning thingies
+        public async Task<List<VesselManning>> GetVesselManningAsync(int vesselId)
+        {
+            return await _context.VesselMannings
+                .Where(vm => vm.VesselId == vesselId)
+                .OrderByDescending(vm => vm.Rank)
+                .ToListAsync();
+        }
+
+        public async Task<int> AddVesselManningAsync(List<VesselManning> vm)
+        {
+            foreach (var v in vm)
+            {
+                await _context.VesselMannings.AddAsync(v);
+            }
+            return await _context.SaveChangesAsync();
+        }
+        public async Task<int> DeleteVesselManningAsync(int vesselId, List<string> ranks)
+        {
+            var toDelete = await _context.VesselMannings
+                .Where(vm => vm.VesselId == vesselId && ranks.Contains(vm.Rank))
+                .ToListAsync();
+            if (toDelete.Count == 0) return 0; //nothing to delete
+            _context.VesselMannings.RemoveRange(toDelete);
+            return await _context.SaveChangesAsync();
+        }
+
+
+        //payroll thingies
+        public async Task<int> AddPayrollRecordAsync(Payroll rec)
+        {
+            await _context.PayrollRecords.AddAsync(rec);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Payroll>> GetPayrollByCrewAsync(int crewId)
+        {
+            return await _context.PayrollRecords
+                .Where(p => p.CrewMemberId == crewId)
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+        }
+
+        //expense thingies
+        public async Task<int> AddCrewExpenseAsync(CrewExpense rec)
+        {
+            await _context.CrewExpenses.AddAsync(rec);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<CrewExpense>> GetExpensesByCrewAsync(int crewId)
+        {
+            return await _context.CrewExpenses
+                .Where(e => e.CrewMemberId == crewId)
+                .OrderByDescending(e => e.ExpenseDate)
+                .ToListAsync();
+        }
+        
+        public async Task<int> AddCashStatementAsync(StatementOfCash soc)
+        {
+            await _context.CashStatements.AddAsync(soc);
+            return await _context.SaveChangesAsync();
+        }
     }
 
     //rest of the stuff goes here.

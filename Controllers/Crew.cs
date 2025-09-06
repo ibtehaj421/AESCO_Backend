@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ASCO.Services;
+using ASCO.DTOs;
 //[Authorize]
 [ApiController]
 [Route("crew")]
@@ -190,6 +191,119 @@ public class CrewController : ControllerBase
         else
         {
             return StatusCode(500, "An error occurred while updating the assignment details.");
+        }
+    }
+
+    //payroll thingies.
+    [HttpPost("payroll/add")]
+    public async Task<IActionResult> AddPayrollRecord([FromBody] PayrollDTO dto)
+    {
+        if (dto == null || dto.CrewMemberId <= 0 || string.IsNullOrWhiteSpace(dto.Currency) || dto.PaymentDate == default)
+        {
+            return BadRequest("Invalid payroll data.");
+        }
+
+        int result = await _crewService.AddPayrollRecordAsync(dto);
+        if (result > 0)
+        {
+            return Ok("Payroll record added successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while adding the payroll record.");
+        }
+    }
+    [HttpGet("payroll/individual/{crewId}")]
+    public async Task<IActionResult> GetPayrollByCrew(int crewId)
+    {
+        if (crewId <= 0) return BadRequest("Invalid crew id");
+        var payrolls = await _crewService.GetPayrollByCrewAsync(crewId);
+        return Ok(payrolls); //if the values are empty, it means there is no payroll for that crew member.
+    }
+
+    //cash statements and expenses
+    [HttpPost("expense/add")]
+    public async Task<IActionResult> AddCrewExpense([FromBody] CreateCrewExpenseDto dto)
+    {
+        if (dto == null || dto.CrewMemberId <= 0 || dto.Amount <= 0 || string.IsNullOrWhiteSpace(dto.Currency))
+        {
+            return BadRequest("Invalid crew expense data.");
+        }
+
+        int result = await _crewService.AddCrewExpenseAsync(dto);
+        if (result > 0)
+        {
+            return Ok("Crew expense record added successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while adding the crew expense record.");
+        }
+    }
+
+    [HttpPost("statement/add")]
+    public async Task<IActionResult> AddCashStatement([FromBody] StatementOfCashCreateDto dto)
+    {
+        if (dto == null || dto.VesselId <= 0)
+        {
+            return BadRequest("Invalid cash statement data.");
+        }
+
+        int result = await _crewService.AddCashStatementAsync(dto);
+        if (result > 0)
+        {
+            return Ok("Cash statement record added successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while adding the cash statement record.");
+        }
+    }
+
+    //vessel manning thingies
+    [HttpGet("vessel/manning/{vesselId}")]
+    public async Task<IActionResult> GetVesselManning(int vesselId)
+    {
+        if (vesselId <= 0) return BadRequest("Invalid vessel id");
+        var manning = await _crewService.GetVesselManningAsync(vesselId);
+        return Ok(manning); //if the values are empty, it means there is no manning for that vessel.
+    }
+
+    [HttpPost("vessel/manning/add")]
+    public async Task<IActionResult> AddVesselManning([FromBody] VesselManningDTO dto)
+    {
+        if (dto == null || dto.VesselId <= 0 || dto.Rank == null || dto.Rank.Count == 0)
+        {
+            return BadRequest("Invalid vessel manning data.");
+        }
+
+        int result = await _crewService.AddVesselManningAsync(dto);
+        if (result > 0)
+        {
+            return Ok("Vessel manning record added successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while adding the vessel manning record.");
+        }
+    }
+
+    [HttpDelete("vessel/manning/delete")]
+    public async Task<IActionResult> DeleteVesselManning([FromBody] VesselManningDeleteDTO dto)
+    {
+        if (dto == null || dto.VesselId <= 0 || dto.Rank == null || dto.Rank.Count == 0)
+        {
+            return BadRequest("Invalid vessel manning deletion data.");
+        }
+
+        int result = await _crewService.RemoveVesselManningAsync(dto);
+        if (result > 0)
+        {
+            return Ok("Vessel manning record(s) deleted successfully.");
+        }
+        else
+        {
+            return StatusCode(500, "An error occurred while deleting the vessel manning record(s).");
         }
     }
 }

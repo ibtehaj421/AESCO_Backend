@@ -3,6 +3,7 @@ using System;
 using ASCO.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendAESCO.Migrations
 {
     [DbContext(typeof(ASCODbContext))]
-    partial class ASCODbContextModelSnapshot : ModelSnapshot
+    [Migration("20250905121018_CrewModuleUpdates")]
+    partial class CrewModuleUpdates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,97 +152,6 @@ namespace BackendAESCO.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("CrewCertifications");
-                });
-
-            modelBuilder.Entity("ASCO.Models.CrewExpense", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CrewMemberId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<DateTime>("ExpenseDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ExpenseReportId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrewMemberId");
-
-                    b.HasIndex("ExpenseReportId");
-
-                    b.ToTable("CrewExpenses");
-                });
-
-            modelBuilder.Entity("ASCO.Models.CrewExpenseReport", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CrewMemberId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("ReportDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ShipId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrewMemberId");
-
-                    b.HasIndex("ShipId");
-
-                    b.ToTable("CrewExpenseReport");
                 });
 
             modelBuilder.Entity("ASCO.Models.CrewMedicalRecord", b =>
@@ -786,53 +698,6 @@ namespace BackendAESCO.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("ASCO.Models.Payroll", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("BaseWage")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Bonuses")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("CrewMemberId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Deductions")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Overtime")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("PeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("PeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrewMemberId");
-
-                    b.ToTable("CrewPayrolls");
-                });
-
             modelBuilder.Entity("ASCO.Models.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -1361,29 +1226,6 @@ namespace BackendAESCO.Migrations
                     b.ToTable("UserRoles");
                 });
 
-            modelBuilder.Entity("ASCO.Models.VesselManning", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Rank")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("VesselId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VesselId");
-
-                    b.ToTable("VesselMannings");
-                });
-
             modelBuilder.Entity("ASCO.Models.Voyage", b =>
                 {
                     b.Property<int>("Id")
@@ -1515,55 +1357,6 @@ namespace BackendAESCO.Migrations
                     b.ToTable("VoyageLogs");
                 });
 
-            modelBuilder.Entity("StatementOfCash", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Balance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<decimal?>("Inflow")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("Outflow")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("VesselId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("VesselId");
-
-                    b.ToTable("StatementOfCash");
-                });
-
             modelBuilder.Entity("ASCO.Models.Certificate", b =>
                 {
                     b.HasOne("ASCO.Models.User", "CreatedBy")
@@ -1592,44 +1385,6 @@ namespace BackendAESCO.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("ASCO.Models.CrewExpense", b =>
-                {
-                    b.HasOne("ASCO.Models.User", "CrewMember")
-                        .WithMany()
-                        .HasForeignKey("CrewMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ASCO.Models.CrewExpenseReport", "ExpenseReport")
-                        .WithMany()
-                        .HasForeignKey("ExpenseReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrewMember");
-
-                    b.Navigation("ExpenseReport");
-                });
-
-            modelBuilder.Entity("ASCO.Models.CrewExpenseReport", b =>
-                {
-                    b.HasOne("ASCO.Models.User", "CrewMember")
-                        .WithMany()
-                        .HasForeignKey("CrewMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ASCO.Models.Ship", "Ship")
-                        .WithMany()
-                        .HasForeignKey("ShipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrewMember");
-
-                    b.Navigation("Ship");
                 });
 
             modelBuilder.Entity("ASCO.Models.CrewMedicalRecord", b =>
@@ -1777,17 +1532,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ASCO.Models.Payroll", b =>
-                {
-                    b.HasOne("ASCO.Models.User", "CrewMember")
-                        .WithMany()
-                        .HasForeignKey("CrewMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CrewMember");
-                });
-
             modelBuilder.Entity("ASCO.Models.PortCall", b =>
                 {
                     b.HasOne("ASCO.Models.User", "CreatedBy")
@@ -1895,17 +1639,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ASCO.Models.VesselManning", b =>
-                {
-                    b.HasOne("ASCO.Models.Ship", "Vessel")
-                        .WithMany()
-                        .HasForeignKey("VesselId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Vessel");
-                });
-
             modelBuilder.Entity("ASCO.Models.Voyage", b =>
                 {
                     b.HasOne("ASCO.Models.Ship", "Ship")
@@ -1934,25 +1667,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("LoggedBy");
 
                     b.Navigation("Voyage");
-                });
-
-            modelBuilder.Entity("StatementOfCash", b =>
-                {
-                    b.HasOne("ASCO.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ASCO.Models.Ship", "Vessel")
-                        .WithMany()
-                        .HasForeignKey("VesselId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("Vessel");
                 });
 
             modelBuilder.Entity("ASCO.Models.Permission", b =>

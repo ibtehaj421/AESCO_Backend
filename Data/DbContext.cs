@@ -36,7 +36,14 @@ namespace ASCO.DbContext
         public DbSet<CrewPassport> CrewPassports { get; set; }
         public DbSet<CrewVisa> CrewVisas { get; set; }
         public DbSet<CrewReport> CrewReports { get; set; }
-        //public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<VesselManning> VesselMannings { get; set; }
+
+        public DbSet<Payroll> PayrollRecords { get; set; }
+        public DbSet<CrewExpenseReport> CrewExpenseReports { get; set; }
+        public DbSet<CrewExpense> CrewExpenses { get; set; }
+        
+        public DbSet<Incident> Incidents { get; set; }
+        public DbSet<StatementOfCash> CashStatements { get; set; }
 
         //on model creating method
 
@@ -220,6 +227,28 @@ namespace ASCO.DbContext
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+            //vessel manning
+            modelBuilder.Entity<VesselManning>()
+            .HasOne(vm => vm.Vessel)
+            .WithMany()
+            .HasForeignKey(vm => vm.VesselId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes, will look into this later
+
+            //payroll records
+            modelBuilder.Entity<Payroll>()
+            .HasOne(p => p.CrewMember)
+            .WithMany()
+            .HasForeignKey(p => p.CrewMemberId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes, will look into this later
+
+            //crew expenses
+            modelBuilder.Entity<CrewExpense>()
+            .HasOne(ce => ce.CrewMember)
+            .WithMany()
+            .HasForeignKey(ce => ce.CrewMemberId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes, will look into this later
+            
+            //cash statements
 
         }
     }

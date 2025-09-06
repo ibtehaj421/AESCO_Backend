@@ -1,3 +1,4 @@
+using ASCO.DTOs;
 using ASCO.Models;
 using ASCO.Repositories;
 using ASCP.Repositories;
@@ -270,59 +271,90 @@ namespace ASCO.Services
         public Task<List<CrewReport>> SearchCrewReportsAsync(int? userId, string? reportType, int page, int pageSize) => _crewRepository.SearchCrewReportsAsync(userId, reportType, page, pageSize);
 
         public Task<List<ShipAssignment>> GetAssignmentHistoryAsync(int userId) => _crewRepository.GetAssignmentHistoryAsync(userId);
-        //     public async Task<string> AddCrewAsync(CreateUserDto crewDto)
-        //     {
-        //         if (crewDto == null)
-        //         {
-        //             return "Invalid crew data.";
-        //         }
+        //vessel manning properties.
 
-        //         var crew = new User
-        //         {
+        public async Task<int> AddVesselManningAsync(VesselManningDTO vm)
+        {
+            List<VesselManning> addManning = new List<VesselManning>();
+            //for each rank in the list, add a new VesselManning entry
+            foreach (string rank in vm.Rank)
+            {
+                var newManning = new VesselManning
+                {
+                    VesselId = vm.VesselId,
+                    Rank = rank
+                };
+                addManning.Add(newManning);
+            }
+            var val = await _crewRepository.AddVesselManningAsync(addManning);
+            return val; //if the value is positive, the manning was added successfully.
+        }
 
-        //         };
+        public async Task<int> RemoveVesselManningAsync(VesselManningDeleteDTO vessel)
+        {
+            var val = await _crewRepository.DeleteVesselManningAsync(vessel.VesselId, vessel.Rank);
+            return val; //if the value
+        }
+        public Task<List<VesselManning>> GetVesselManningAsync(int vesselId) => _crewRepository.GetVesselManningAsync(vesselId);
 
-        //         var result = await _crewRepository.AddCrewAsync(crew);
-        //         return result > 0 ? "Crew added successfully." : "Failed to add crew.";
-        //     }
+        //payroll records
+        public async Task<int> AddPayrollRecordAsync(PayrollDTO dto)
+        {
+            var rec = new Payroll
+            {
+                CrewMemberId = dto.CrewMemberId,
+                PeriodStart = dto.PeriodStart,
+                PeriodEnd = dto.PeriodEnd,
+                BaseWage = dto.BaseWage,
+                Overtime = dto.Overtime,
+                Bonuses = dto.Bonuses,
+                Deductions = dto.Deductions,
+                Currency = dto.Currency,
+                PaymentDate = dto.PaymentDate,
+                PaymentMethod = dto.PaymentMethod
 
-        //     public async Task<List<Crew>> GetAllCrewsAsync()
-        //     {
-        //         return await _crewRepository.GetAllCrewsAsync();
-        //     }
+            };
+            return await _crewRepository.AddPayrollRecordAsync(rec);
+        }
 
-        //     public async Task<Crew?> GetCrewByIdAsync(int crewId)
-        //     {
-        //         return await _crewRepository.GetCrewByIdAsync(crewId);
-        //     }
+        public async Task<List<Payroll>> GetPayrollByCrewAsync(int crewId)
+        {
+            return await _crewRepository.GetPayrollByCrewAsync(crewId);
+        }
 
-        //     public async Task<string> UpdateCrewAsync(int crewId, UpdateCrewDto crewDto)
-        //     {
-        //         var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
-        //         if (existingCrew == null)
-        //         {
-        //             return "Crew not found.";
-        //         }
+        //expense records
+        public async Task<int> AddCrewExpenseAsync(CreateCrewExpenseDto expense)
+        {
+            // Calculate AmountInBaseCurrency
+            CrewExpense exp = new CrewExpense
+            {
+                ExpenseReportId = expense.ExpenseReportId,
+                CrewMemberId = expense.CrewMemberId,
+                Category = expense.Category,
+                Amount = expense.Amount,
+                Currency = expense.Currency,
+                ExpenseDate = expense.ExpenseDate ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = expense.UpdatedAt
+            };
 
-        //         existingCrew.Name = crewDto.Name ?? existingCrew.Name;
-        //         existingCrew.Description = crewDto.Description ?? existingCrew.Description;
-        //         existingCrew.UpdatedAt = DateTime.UtcNow;
+            return await _crewRepository.AddCrewExpenseAsync(exp);
+        }
 
-        //         var result = await _crewRepository.UpdateCrewAsync(existingCrew);
-        //         return result > 0 ? "Crew updated successfully." : "Failed to update crew.";
-        //     }
+        //cash statement
+        public async Task<int> AddCashStatementAsync(StatementOfCashCreateDto dto)
+        {
+            var rec = new StatementOfCash
+            {
+                VesselId = dto.VesselId,
+                CreatedById = dto.CreatedById,
+                TransactionDate = dto.TransactionDate,
+                status = dto.status ?? "pending",
+                CreatedAt = DateTime.UtcNow
+            };
+            return await _crewRepository.AddCashStatementAsync(rec);
+        }
 
-        //     public async Task<string> DeleteCrewAsync(int crewId)
-        //     {
-        //         var existingCrew = await _crewRepository.GetCrewByIdAsync(crewId);
-        //         if (existingCrew == null)
-        //         {
-        //             return "Crew not found.";
-        //         }
-
-        //         var result = await _crewRepository.DeleteCrewAsync(existingCrew);
-        //         return result > 0 ? "Crew deleted successfully." : "Failed to delete crew.";
-        //     }
     }
     
 }
