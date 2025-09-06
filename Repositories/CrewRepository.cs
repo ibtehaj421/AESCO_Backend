@@ -2,6 +2,7 @@ using ASCO.Models;
 using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using ASCO.DbContext;
+using ASCO.DTOs;
 
 namespace ASCO.Repositories
 {
@@ -282,8 +283,9 @@ namespace ASCO.Repositories
                     ct.Training.Contains(searchDto.SearchTerm) ||
                     ct.TrainingCategory.Contains(searchDto.SearchTerm) ||
                     ct.Trainer.Contains(searchDto.SearchTerm) ||
-                    ct.User.Name.Contains(searchDto.SearchTerm) ||
-                    ct.User.Surname.Contains(searchDto.SearchTerm) ||
+                    (ct.User != null && 
+                        (ct.User.Name != null && ct.User.Name.Contains(searchDto.SearchTerm) ||
+                        ct.User.Surname != null && ct.User.Surname.Contains(searchDto.SearchTerm))) ||
                     ct.Vessel.Name.Contains(searchDto.SearchTerm));
             }
 
@@ -364,8 +366,9 @@ namespace ASCO.Repositories
                 query = query.Where(ce => 
                     ce.FormName.Contains(searchDto.SearchTerm) ||
                     ce.FormNo.Contains(searchDto.SearchTerm) ||
-                    ce.User.Name.Contains(searchDto.SearchTerm) ||
-                    ce.User.Surname.Contains(searchDto.SearchTerm) ||
+                    (ce.User != null && 
+                        (ce.User.Name != null && ce.User.Name.Contains(searchDto.SearchTerm) ||
+                        ce.User.Surname != null && ce.User.Surname.Contains(searchDto.SearchTerm))) ||
                     ce.Vessel.Name.Contains(searchDto.SearchTerm));
             }
 
