@@ -70,7 +70,7 @@ namespace ASCO.Services
         public async Task<DocDto> UploadFileAsync(UploadFileDto dto)
         {
             if (dto.File == null || dto.File.Length == 0)
-            throw new InvalidOperationException("File is empty");
+                throw new InvalidOperationException("File is empty");
 
             Document? parent = null;
             if (dto.ParentId.HasValue)
@@ -110,6 +110,31 @@ namespace ASCO.Services
             await _documentRepository.AddAsync(file);
 
             return file.ToDto();
+        }
+
+        public async Task<List<DocDto>> GetAllByHierarchyAsync()
+        {
+            //get all documents.
+            var docs = await _documentRepository.GetAllAsync();
+            var dtos = docs.Select(DocumentMapper.ToDto).ToList();
+
+            var lookup = dtos.ToDictionary(d => d.Id, d => d);
+            List<DocDto> roots = new List<DocDto>();
+
+            foreach (var doc in dtos)
+            {
+                if (doc.ParentId.HasValue && lookup.ContainsKey(doc.ParentId.Value))
+                {
+                    lookup[doc.ParentId.Value].Children.Add(doc);
+                }
+                else
+                {
+                    roots.Add(doc); // top-level (no parent)
+                }
+            }
+
+            return roots; 
+
         }
     }
     
