@@ -3,6 +3,7 @@ using System;
 using ASCO.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendAESCO.Migrations
 {
     [DbContext(typeof(ASCODbContext))]
-    partial class ASCODbContextModelSnapshot : ModelSnapshot
+    [Migration("20250907164341_FormTables")]
+    partial class FormTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -835,43 +838,6 @@ namespace BackendAESCO.Migrations
                     b.HasIndex("DocumentId");
 
                     b.ToTable("DocumentLogs");
-                });
-
-            modelBuilder.Entity("ASCO.Models.DocumentModuleDatabank", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("FieldId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SubTypeName")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FieldId");
-
-                    b.ToTable("DocumentModuleDatabanks");
-                });
-
-            modelBuilder.Entity("ASCO.Models.DocumentModuleMain", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FieldName")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DocumentModuleMains");
                 });
 
             modelBuilder.Entity("ASCO.Models.DocumentVersion", b =>
@@ -2336,17 +2302,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("Document");
                 });
 
-            modelBuilder.Entity("ASCO.Models.DocumentModuleDatabank", b =>
-                {
-                    b.HasOne("ASCO.Models.DocumentModuleMain", "Field")
-                        .WithMany("Databanks")
-                        .HasForeignKey("FieldId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Field");
-                });
-
             modelBuilder.Entity("ASCO.Models.DocumentVersion", b =>
                 {
                     b.HasOne("ASCO.Models.Document", "Document")
@@ -2649,11 +2604,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("Logs");
 
                     b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("ASCO.Models.DocumentModuleMain", b =>
-                {
-                    b.Navigation("Databanks");
                 });
 
             modelBuilder.Entity("ASCO.Models.Permission", b =>

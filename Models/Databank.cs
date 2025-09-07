@@ -23,4 +23,24 @@ namespace ASCO.Models
         // Navigation property for the main field
         public CrewModuleMain? Field { get; set; } // Made nullable
     }
+
+    public class DocumentModuleMain
+    {
+        public int Id { get; set; }
+        public string? FieldName { get; set; } // Made nullable
+
+        // Navigation property for related databank entries
+        public ICollection<DocumentModuleDatabank> Databanks { get; set; } = new List<DocumentModuleDatabank>(); // Initialized collection
+    }
+
+    public class DocumentModuleDatabank
+    {
+        public int Id { get; set; }
+        public int FieldId { get; set; }
+        public string? SubTypeName { get; set; } // Made nullable
+
+        // Navigation property for the main field
+        public DocumentModuleMain? Field { get; set; } // Made nullable
+    }
+
 }

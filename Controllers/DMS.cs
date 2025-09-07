@@ -48,7 +48,7 @@ public class DMSController : ControllerBase
         var (doc, filePath) = await _docService.GetDocumentWithFileAsync(id);
 
         if (doc == null || string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
-        return NotFound(new { message = "Document not found" });
+            return NotFound(new { message = "Document not found" });
 
         // var contentType = "application/octet-stream"; // fallback
         // var ext = Path.GetExtension(filePath);
@@ -57,7 +57,7 @@ public class DMSController : ControllerBase
         //     contentType = MimeTypeMap.GetMimeType(Path.GetExtension(filePath));
         // }
         var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(filePath, out string contentType))
+        if (!provider.TryGetContentType(filePath, out string? contentType))
         {
             contentType = "application/octet-stream"; // fallback
         }
@@ -67,4 +67,30 @@ public class DMSController : ControllerBase
 
         return File(fileBytes, contentType);
     }
+
+
+    //forms and creations
+    [HttpPost("form/create")]
+    public async Task<IActionResult> CreateForm([FromBody] FormTemplateDTO dto)
+    {
+        var form = await _docService.CreateFormAsync(dto);
+        return Ok(form);
+    }
+
+    [HttpGet("forms/templates")]
+    public async Task<IActionResult> GetAllFormTemplates()
+    {
+        var forms = await _docService.GetAllFormTemplatesAsync();
+        return Ok(forms);
+    }
+
+    [HttpGet("form/template/{id}")]
+    public async Task<IActionResult> GetFormTemplateById(int id)
+    {
+        var form = await _docService.GetFormTemplateByIdAsync(id);
+        if (form == null) return NotFound(new { message = "Form not found" });
+        return Ok(form);
+    }
+
+    //a post method in order to store form responses in json files.
 }

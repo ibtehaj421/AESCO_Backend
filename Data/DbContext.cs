@@ -56,6 +56,12 @@ namespace ASCO.DbContext
         public DbSet<DocumentLog> DocumentLogs { get; set; }
 
         public DbSet<DocumentVersion> DocumentVersions { get; set; }
+
+        public DbSet<Form> Forms { get; set; }
+        public DbSet<FormField> FormFields { get; set; }
+
+        public DbSet<DocumentModuleMain> DocumentModuleMains { get; set; }
+        public DbSet<DocumentModuleDatabank> DocumentModuleDatabanks { get; set; }
         //public DbSet<Document> Documents { get; set; }
 
 
@@ -352,6 +358,13 @@ namespace ASCO.DbContext
             modelBuilder.Entity<DocumentVersion>()
             .Property(dv => dv.Id)
             .ValueGeneratedNever();
+
+            //document module databank configuration
+            modelBuilder.Entity<DocumentModuleDatabank>()
+                .HasOne(dmd => dmd.Field)
+                .WithMany(dm => dm.Databanks)
+                .HasForeignKey(dmd => dmd.FieldId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

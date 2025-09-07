@@ -32,10 +32,38 @@ namespace ASCO.Repositories
             return await _context.Documents.ToListAsync();
         }
 
-        // public async Task<Document> GetByIdAsync(Guid id)
-        // {
-        //     return await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+        public async Task<(Form,List<FormField>)> CreateFormWithFieldsAsync(Form form, List<FormField> fields)
+        {
+            await _context.Forms.AddAsync(form);
+            await _context.SaveChangesAsync(); // Save to get the generated Form ID
 
+            foreach (var field in fields)
+            {
+                field.FormId = form.Id; // Associate field with the form
+            }
+
+            await _context.FormFields.AddRangeAsync(fields);
+            await _context.SaveChangesAsync();
+            return (form,fields);
+        }
+
+        // public async Task<List<Form>> GetAllFormsWithFieldsAsync()
+        // {
+        //     return await _context.Forms.Include(f => f.FormFields).ToListAsync();
         // }
+        public async Task<List<Form>> GetAllFormsAsync()
+        {
+            return await _context.Forms.ToListAsync();
+        }
+
+        public async Task<Form?> GetFormByIdAsync(int id)
+        {
+            return await _context.Forms.FindAsync(id);
+        }
+
+        public async Task<List<FormField>> GetFieldsByFormIdAsync(int formId)
+        {
+            return await _context.FormFields.Where(f => f.FormId == formId).ToListAsync();
+        }
     }
 }
