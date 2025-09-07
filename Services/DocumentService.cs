@@ -133,8 +133,18 @@ namespace ASCO.Services
                 }
             }
 
-            return roots; 
+            return roots;
 
+        }
+
+        public async Task<(Document? Meta, string? FilePath)> GetDocumentWithFileAsync(Guid id)
+        {
+            //get the document by id.
+            var doc = await _documentRepository.GetByIdAsync(id);
+            Console.WriteLine(doc.PhysicalPath);
+            if (doc == null || doc.IsFolder) return (null, null);
+            string filepath = "uploads/" + doc.PhysicalPath;
+            return (doc, filepath);
         }
     }
     

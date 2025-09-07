@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using ASCO.Services;
 using ASCO.DTOs;
 using Microsoft.Extensions.Options;
-
-
+using Microsoft.AspNetCore.StaticFiles;
+//using MimeTypes;
 
 //[Authorize]
 [ApiController]
@@ -40,5 +40,31 @@ public class DMSController : ControllerBase
     {
         var docs = await _docService.GetAllByHierarchyAsync();
         return Ok(docs);
+    }
+
+    [HttpGet("fetch/{id}")]
+    public async Task<IActionResult> GetFile(Guid id)
+    {
+        var (doc, filePath) = await _docService.GetDocumentWithFileAsync(id);
+
+        if (doc == null || string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+        return NotFound(new { message = "Document not found" });
+
+        // var contentType = "application/octet-stream"; // fallback
+        // var ext = Path.GetExtension(filePath);
+        // if (!string.IsNullOrEmpty(ext))
+        // {
+        //     contentType = MimeTypeMap.GetMimeType(Path.GetExtension(filePath));
+        // }
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(filePath, out string contentType))
+        {
+            contentType = "application/octet-stream"; // fallback
+        }
+        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        //Response.Headers.Add("Content-Disposition", $"inline; filename={doc.Name}");
+        Response.Headers.Append("Content-Disposition", $"inline; filename={doc.Name}");
+
+        return File(fileBytes, contentType);
     }
 }

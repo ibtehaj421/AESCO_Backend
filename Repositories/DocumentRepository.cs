@@ -31,5 +31,11 @@ namespace ASCO.Repositories
         {
             return await _context.Documents.ToListAsync();
         }
+
+        // public async Task<Document> GetByIdAsync(Guid id)
+        // {
+        //     return await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+
+        // }
     }
 }
