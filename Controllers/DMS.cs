@@ -34,4 +34,11 @@ public class DMSController : ControllerBase
         var folder = await _docService.CreateFolderAsync(dto);
         return Ok(folder);
     }
+
+    [HttpGet("all/hierarchy")] //this is to make the view for the file structure on the frontend.
+    public async Task<IActionResult> GetAllDocsByHierarchy()
+    {
+        var docs = await _docService.GetAllByHierarchyAsync();
+        return Ok(docs);
+    }
 }
