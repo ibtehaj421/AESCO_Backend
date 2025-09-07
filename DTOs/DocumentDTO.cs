@@ -47,7 +47,7 @@ namespace ASCO.DTOs
 
         public string? UpdatedBy { get; set; } //id of the user updating the document.
 
-        public List<DocumentDto> Children { get; set; } = new(); // for hierarchy display
+        public List<DocDto> Children { get; set; } = new List<DocDto>(); // for hierarchy display
     }
 
     public class CreateFolderDto
