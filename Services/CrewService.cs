@@ -10,11 +10,13 @@ namespace ASCO.Services
     {
         private readonly CrewRepository _crewRepository;
         private readonly UserRepository _userRepository;
+        private readonly UserService _userService;
 
-        public CrewService(CrewRepository crewRepository, UserRepository userRepository)
+        public CrewService(CrewRepository crewRepository, UserRepository userRepository, UserService userService)
         {
             _crewRepository = crewRepository;
             _userRepository = userRepository;
+            _userService = userService;
         }
 
 
@@ -532,6 +534,332 @@ namespace ASCO.Services
         public Task<List<CrewWorkRestHours>> GetCrewWorkRestHoursByUserAsync(int userId, DateTime? fromDate = null, DateTime? toDate = null) => 
             _crewRepository.GetCrewWorkRestHoursByUserAsync(userId, fromDate, toDate);
 
+        // Aggregated crew profile
+        public async Task<CrewProfileDto?> GetCrewProfileAsync(int userId)
+        {
+            var user = await _crewRepository.GetUserByIdAsync(userId);
+            if (user == null) return null;
+
+            var profile = new CrewProfileDto
+            {
+                PersonalInfo = new UserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name ?? string.Empty,
+                    Surname = user.Surname ?? string.Empty,
+                    Nationality = user.Nationality ?? string.Empty,
+                    IdenNumber = user.IdenNumber.ToString(),
+                    DateOfBirth = user.DateOfBirth ?? DateTime.MinValue,
+                    BirthPlace = user.BirthPlace,
+                    Gender = user.Gender ?? string.Empty,
+                    Status = user.Status ?? string.Empty,
+                    JobType = user.JobType ?? string.Empty,
+                    Rank = user.Rank ?? string.Empty,
+                    MaritalStatus = user.MaritalStatus,
+                    MilitaryStatus = user.MilitaryStatus,
+                    EducationLevel = user.EducationLevel,
+                    GraduationYear = user.GraduationYear,
+                    School = user.School,
+                    Competency = user.Competency ?? string.Empty,
+                    OrganizationUnit = user.OrganizationUnit,
+                    Email = user.Email ?? string.Empty,
+                    FatherName = user.FatherName,
+                    WorkEndDate = user.WorkEndDate,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = null,
+                    LastLoginAt = user.LastLoginAt,
+                    EmailConfirmed = user.EmailConfirmed
+                }
+            };
+
+            // parallel fetch
+            var medicalTask = _crewRepository.GetMedicalByUserAsync(userId);
+            var passportTask = _crewRepository.GetPassportsByUserAsync(userId);
+            var visaTask = _crewRepository.GetVisasByUserAsync(userId);
+            var reportTask = _crewRepository.GetReportsByUserAsync(userId);
+            var payrollTask = _crewRepository.GetPayrollsByUserAsync(userId);
+            var expenseTask = _crewRepository.GetExpensesByCrewAsync(userId);
+            var assignmentTask = _crewRepository.GetAssignmentsByUserAsync(userId);
+            var trainingTask = _crewRepository.GetTrainingsByUserAsync(userId);
+            var evaluationTask = _crewRepository.GetEvaluationsByUserAsync(userId);
+
+            await Task.WhenAll(medicalTask, passportTask, visaTask, reportTask, payrollTask, expenseTask, assignmentTask, trainingTask, evaluationTask);
+
+            profile.MedicalRecords = medicalTask.Result;
+            profile.Passports = passportTask.Result;
+            profile.Visas = visaTask.Result;
+            profile.Reports = reportTask.Result;
+            profile.Payrolls = payrollTask.Result;
+            profile.Expenses = expenseTask.Result;
+            profile.AssignmentHistory = assignmentTask.Result;
+
+            // map trainings to DTO projection with minimal fields already defined
+            profile.Trainings = trainingTask.Result.Select(ct => new CrewTrainingDto
+            {
+                Id = ct.Id,
+                UserId = ct.UserId,
+                UserName = user.Name ?? string.Empty,
+                UserSurname = user.Surname ?? string.Empty,
+                VesselId = ct.VesselId,
+                VesselName = string.Empty,
+                TrainingCategory = ct.TrainingCategory,
+                Rank = ct.Rank,
+                Trainer = ct.Trainer,
+                Remark = ct.Remark,
+                Training = ct.Training,
+                Source = ct.Source,
+                TrainingDate = ct.TrainingDate,
+                ExpireDate = ct.ExpireDate,
+                Status = ct.Status,
+                Attachments = ct.Attachments,
+                CreatedByName = string.Empty,
+                CreatedAt = ct.CreatedAt,
+                UpdatedAt = ct.UpdatedAt,
+                IsExpiringSoon = ct.ExpireDate.HasValue && (ct.ExpireDate.Value - DateTime.UtcNow).TotalDays <= 30,
+                DaysUntilExpiry = ct.ExpireDate.HasValue ? (int)(ct.ExpireDate.Value - DateTime.UtcNow).TotalDays : int.MaxValue
+            }).ToList();
+
+            profile.Evaluations = evaluationTask.Result;
+
+            return profile;
+        }
+
+        // Create an aggregated crew profile
+        public async Task<CreateCrewProfileResultDto> CreateCrewProfileAsync(CreateCrewProfileDto request)
+        {
+            // 1) Create user via existing user service to preserve hashing/roles
+            var registerResp = await _userService.RegisterUserAsync(request.PersonalInfo);
+
+            // Retrieve created user id by email
+            var userIdLong = await _userRepository.GetUserID(request.PersonalInfo.Email);
+            if (userIdLong <= 0)
+            {
+                throw new InvalidOperationException("User creation failed.");
+            }
+            var userId = (int)userIdLong;
+
+            int createdPassports = 0, createdVisas = 0, createdMedical = 0, createdReports = 0,
+                createdPayrolls = 0, createdExpenses = 0, createdAssignments = 0, createdTrainings = 0, createdEvaluations = 0;
+
+            // 2) Passports
+            if (request.Passports != null)
+            {
+                foreach (var p in request.Passports)
+                {
+                    var rec = new CrewPassport
+                    {
+                        UserId = userId,
+                        PassportNumber = p.PassportNumber,
+                        Nationality = p.Nationality,
+                        IssueDate = p.IssueDate,
+                        ExpiryDate = p.ExpiryDate,
+                        IssuedBy = p.IssuedBy,
+                        Notes = p.Notes
+                    };
+                    createdPassports += await _crewRepository.AddPassportAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 3) Visas
+            if (request.Visas != null)
+            {
+                foreach (var v in request.Visas)
+                {
+                    var rec = new CrewVisa
+                    {
+                        UserId = userId,
+                        VisaType = v.VisaType,
+                        Country = v.Country,
+                        IssueDate = v.IssueDate,
+                        ExpiryDate = v.ExpiryDate,
+                        IssuedBy = v.IssuedBy,
+                        Notes = v.Notes
+                    };
+                    createdVisas += await _crewRepository.AddVisaAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 4) Medical
+            if (request.MedicalRecords != null)
+            {
+                foreach (var m in request.MedicalRecords)
+                {
+                    var rec = new CrewMedicalRecord
+                    {
+                        UserId = userId,
+                        ProviderName = m.ProviderName,
+                        BloodGroup = m.BloodGroup,
+                        ExaminationDate = m.ExaminationDate,
+                        ExpiryDate = m.ExpiryDate,
+                        Notes = m.Notes
+                    };
+                    createdMedical += await _crewRepository.AddMedicalAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 5) Reports
+            if (request.Reports != null)
+            {
+                foreach (var r in request.Reports)
+                {
+                    var rec = new CrewReport
+                    {
+                        UserId = userId,
+                        ReportType = r.ReportType,
+                        Title = r.Title,
+                        Details = r.Details,
+                        ReportDate = r.ReportDate ?? DateTime.UtcNow
+                    };
+                    createdReports += await _crewRepository.AddCrewReportAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 6) Payrolls
+            if (request.Payrolls != null)
+            {
+                foreach (var pr in request.Payrolls)
+                {
+                    var rec = new Payroll
+                    {
+                        CrewMemberId = userId,
+                        PeriodStart = pr.PeriodStart,
+                        PeriodEnd = pr.PeriodEnd,
+                        BaseWage = pr.BaseWage,
+                        Overtime = pr.Overtime,
+                        Bonuses = pr.Bonuses,
+                        Deductions = pr.Deductions,
+                        Currency = pr.Currency,
+                        PaymentDate = pr.PaymentDate,
+                        PaymentMethod = pr.PaymentMethod
+                    };
+                    createdPayrolls += await _crewRepository.AddPayrollRecordAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 7) Expenses
+            if (request.Expenses != null)
+            {
+                foreach (var e in request.Expenses)
+                {
+                    var rec = new CrewExpense
+                    {
+                        ExpenseReportId = e.ExpenseReportId,
+                        CrewMemberId = userId,
+                        Category = e.Category,
+                        Amount = e.Amount,
+                        Currency = e.Currency,
+                        ExpenseDate = e.ExpenseDate ?? DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = e.UpdatedAt
+                    };
+                    createdExpenses += await _crewRepository.AddCrewExpenseAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 8) Assignments
+            if (request.Assignments != null)
+            {
+                foreach (var a in request.Assignments)
+                {
+                    var assignment = new ShipAssignment
+                    {
+                        ShipId = a.VesselId,
+                        UserId = userId,
+                        //Position = a.Position ?? a.Rank ?? "Crew Member",
+                        AssignedAt = a.AssignmentDate ?? DateTime.UtcNow,
+                        UnassignedAt = a.EndDate,
+                        Status = "active",
+                        AssignedByUserId = a.AssignedByUserId,
+                        Notes = a.Notes
+                    };
+                    createdAssignments += await _crewRepository.AssignCrewToVesselAsync(assignment) > 0 ? 1 : 0;
+                }
+            }
+
+            // 9) Trainings
+            if (request.Trainings != null)
+            {
+                foreach (var t in request.Trainings)
+                {
+                    var training = new CrewTraining
+                    {
+                        UserId = userId,
+                        VesselId = t.VesselId,
+                        TrainingCategory = t.TrainingCategory,
+                        Rank = t.Rank,
+                        Trainer = t.Trainer,
+                        Remark = t.Remark,
+                        Training = t.Training,
+                        Source = t.Source,
+                        TrainingDate = t.TrainingDate,
+                        ExpireDate = t.ExpireDate,
+                        Status = t.Status,
+                        Attachments = t.Attachments,
+                        CreatedByUserId = 1,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    createdTrainings += await _crewRepository.AddCrewTrainingAsync(training) > 0 ? 1 : 0;
+                }
+            }
+
+            // 10) Evaluations
+            if (request.Evaluations != null)
+            {
+                foreach (var ev in request.Evaluations)
+                {
+                    var evaluation = new CrewEvaluation
+                    {
+                        UserId = userId,
+                        VesselId = ev.VesselId,
+                        FormNo = ev.FormNo,
+                        RevisionNo = ev.RevisionNo,
+                        RevisionDate = ev.RevisionDate,
+                        FormName = ev.FormName,
+                        FormDescription = ev.FormDescription,
+                        EnteredByUserId = ev.EnteredByUserId,
+                        EnteredDate = ev.EnteredDate,
+                        Rank = ev.Rank,
+                        Name = ev.Name,
+                        Surname = ev.Surname,
+                        UniqueId = ev.UniqueId,
+                        TechnicalCompetence = ev.TechnicalCompetence,
+                        SafetyAwareness = ev.SafetyAwareness,
+                        Teamwork = ev.Teamwork,
+                        Communication = ev.Communication,
+                        Leadership = ev.Leadership,
+                        ProblemSolving = ev.ProblemSolving,
+                        Adaptability = ev.Adaptability,
+                        WorkEthic = ev.WorkEthic,
+                        OverallRating = ev.OverallRating,
+                        Strengths = ev.Strengths,
+                        AreasForImprovement = ev.AreasForImprovement,
+                        Comments = ev.Comments,
+                        CrewMemberComments = ev.CrewMemberComments,
+                        CrewMemberSignature = ev.CrewMemberSignature,
+                        CrewMemberSignedDate = ev.CrewMemberSignedDate,
+                        Status = ev.Status,
+                        Attachments = ev.Attachments,
+                        CreatedByUserId = 1,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    createdEvaluations += await _crewRepository.AddCrewEvaluationAsync(evaluation) > 0 ? 1 : 0;
+                }
+            }
+
+            return new CreateCrewProfileResultDto
+            {
+                UserId = userId,
+                CreatedPassports = createdPassports,
+                CreatedVisas = createdVisas,
+                CreatedMedical = createdMedical,
+                CreatedReports = createdReports,
+                CreatedPayrolls = createdPayrolls,
+                CreatedExpenses = createdExpenses,
+                CreatedAssignments = createdAssignments,
+                CreatedTrainings = createdTrainings,
+                CreatedEvaluations = createdEvaluations
+            };
+        }
     }
     
 }

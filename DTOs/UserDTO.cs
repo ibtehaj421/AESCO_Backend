@@ -1,6 +1,8 @@
 //leave this mty for now.
 //will configure this later.
 using System.ComponentModel.DataAnnotations;
+using ASCO.DTOs;
+using ASCO.Models;
 public abstract class BaseUserDto
 {
     [Required(ErrorMessage = "Name is required")]
@@ -301,6 +303,24 @@ public class CrewDocumentSearchDto
     public int PageSize { get; set; } = 20;
 }
 
+// Aggregated Crew Profile DTOs
+public class CrewProfileDto
+{
+    public UserDto PersonalInfo { get; set; } = new UserDto();
+    public List<CrewPassport> Passports { get; set; } = new List<CrewPassport>();
+    public List<CrewVisa> Visas { get; set; } = new List<CrewVisa>();
+    public List<CrewMedicalRecord> MedicalRecords { get; set; } = new List<CrewMedicalRecord>();
+    public List<CrewReport> Reports { get; set; } = new List<CrewReport>();
+    public List<Payroll> Payrolls { get; set; } = new List<Payroll>();
+    public List<CrewExpense> Expenses { get; set; } = new List<CrewExpense>();
+    public List<ShipAssignment> AssignmentHistory { get; set; } = new List<ShipAssignment>();
+    public List<CrewTrainingDto> Trainings { get; set; } = new List<CrewTrainingDto>();
+    public List<CrewEvaluation> Evaluations { get; set; } = new List<CrewEvaluation>();
+
+    // Placeholders for sections not explicitly modeled yet
+    // Supplies, Leaves, Attachments can be wired when models are available
+}
+
 public class CrewFilterDto
 {
     public string? Keyword { get; set; }
@@ -421,4 +441,35 @@ public class CrewReportDto : CreateCrewReportDto
 {
     [Required]
     public int Id { get; set; }
+}
+
+// Create aggregated crew profile (input from frontend)
+public class CreateCrewProfileDto
+{
+    [Required]
+    public CreateUserDto PersonalInfo { get; set; } = new CreateUserDto();
+
+    public List<CreateCrewPassportDto>? Passports { get; set; }
+    public List<CreateCrewVisaDto>? Visas { get; set; }
+    public List<CreateCrewMedicalDto>? MedicalRecords { get; set; }
+    public List<CreateCrewReportDto>? Reports { get; set; }
+    public List<PayrollDTO>? Payrolls { get; set; }
+    public List<CreateCrewExpenseDto>? Expenses { get; set; }
+    public List<AssignmentDTO>? Assignments { get; set; }
+    public List<CreateCrewTrainingDto>? Trainings { get; set; }
+    public List<CreateCrewEvaluationDto>? Evaluations { get; set; }
+}
+
+public class CreateCrewProfileResultDto
+{
+    public int UserId { get; set; }
+    public int CreatedPassports { get; set; }
+    public int CreatedVisas { get; set; }
+    public int CreatedMedical { get; set; }
+    public int CreatedReports { get; set; }
+    public int CreatedPayrolls { get; set; }
+    public int CreatedExpenses { get; set; }
+    public int CreatedAssignments { get; set; }
+    public int CreatedTrainings { get; set; }
+    public int CreatedEvaluations { get; set; }
 }

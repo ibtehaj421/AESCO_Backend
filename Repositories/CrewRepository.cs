@@ -482,6 +482,76 @@ namespace ASCO.Repositories
 
             return await query.OrderByDescending(cwrh => cwrh.Date).ToListAsync();
         }
+
+        // Aggregation helpers for CrewProfile
+        public Task<User?> GetUserByIdAsync(int userId)
+        {
+            return _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public Task<List<CrewMedicalRecord>> GetMedicalByUserAsync(int userId)
+        {
+            return _context.CrewMedicalRecords
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.ExaminationDate)
+                .ToListAsync();
+        }
+
+        public Task<List<CrewPassport>> GetPassportsByUserAsync(int userId)
+        {
+            return _context.CrewPassports
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.ExpiryDate)
+                .ToListAsync();
+        }
+
+        public Task<List<CrewVisa>> GetVisasByUserAsync(int userId)
+        {
+            return _context.CrewVisas
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.ExpiryDate)
+                .ToListAsync();
+        }
+
+        public Task<List<CrewReport>> GetReportsByUserAsync(int userId)
+        {
+            return _context.CrewReports
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.ReportDate)
+                .ToListAsync();
+        }
+
+        public Task<List<Payroll>> GetPayrollsByUserAsync(int userId)
+        {
+            return _context.PayrollRecords
+                .Where(p => p.CrewMemberId == userId)
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+        }
+
+        public Task<List<ShipAssignment>> GetAssignmentsByUserAsync(int userId)
+        {
+            return _context.ShipAssignments
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.AssignedAt)
+                .ToListAsync();
+        }
+
+        public Task<List<CrewTraining>> GetTrainingsByUserAsync(int userId)
+        {
+            return _context.CrewTrainings
+                .Where(ct => ct.UserId == userId)
+                .OrderByDescending(ct => ct.TrainingDate)
+                .ToListAsync();
+        }
+
+        public Task<List<CrewEvaluation>> GetEvaluationsByUserAsync(int userId)
+        {
+            return _context.CrewEvaluations
+                .Where(ce => ce.UserId == userId)
+                .OrderByDescending(ce => ce.EnteredDate)
+                .ToListAsync();
+        }
     }
 
     //rest of the stuff goes here.

@@ -14,7 +14,6 @@ public class CrewController : ControllerBase
         _crewService = crewService;
     }
 
-
     //updations
     [HttpPost("update")]
     public async Task<IActionResult> UpdateCrew([FromBody] UpdateUserDto crewDto)
@@ -408,6 +407,25 @@ public class CrewController : ControllerBase
     {
         if (userId <= 0) return BadRequest("Invalid user id");
         var result = await _crewService.GetCrewWorkRestHoursByUserAsync(userId, fromDate, toDate);
+        return Ok(result);
+    }
+
+    // Aggregated crew profile
+    [HttpGet("profile/{userId}")]
+    public async Task<IActionResult> GetCrewProfile(int userId)
+    {
+        if (userId <= 0) return BadRequest("Invalid user id");
+        var profile = await _crewService.GetCrewProfileAsync(userId);
+        if (profile == null) return NotFound();
+        return Ok(profile);
+    }
+
+    // Create aggregated crew profile
+    [HttpPost("profile/create")]
+    public async Task<IActionResult> CreateCrewProfile([FromBody] CreateCrewProfileDto dto)
+    {
+        if (dto == null || dto.PersonalInfo == null) return BadRequest("Invalid payload");
+        var result = await _crewService.CreateCrewProfileAsync(dto);
         return Ok(result);
     }
 }
