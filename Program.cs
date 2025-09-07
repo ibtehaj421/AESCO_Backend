@@ -29,6 +29,11 @@ builder.Services.AddScoped<CrewRepository>();
 builder.Services.AddScoped<CrewService>();
 builder.Services.AddScoped<VesselRepository>();
 builder.Services.AddScoped<VesselService>();
+builder.Services.AddScoped<DocumentRepository>();
+builder.Services.AddScoped<DocumentService>();
+builder.Services.Configure<DocumentStorageOptions>(
+    builder.Configuration.GetSection("DocumentStorage")
+);
 //jwt add ons go here.
 builder.Services.AddScoped<JwtServices>();
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -93,12 +98,12 @@ if (!app.Environment.IsEnvironment("Test"))
         db.Database.Migrate();
     }
 }
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
-    RequestPath = "/images"
-});
+// app.UseStaticFiles(new StaticFileOptions
+// {
+//     FileProvider = new PhysicalFileProvider(
+//         Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+//     RequestPath = "/documents"
+// }); //do not need to use for now. Shifted to another filesytem approach for better handling.
 ////////////////////////////////////////
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

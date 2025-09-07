@@ -72,6 +72,6 @@ namespace ASCO.Models
         public virtual Ship Ship { get; set; } = null!;
         public virtual Voyage? Voyage { get; set; }
         public virtual User ReportedBy { get; set; } = null!;
-        public virtual User? InvestigatedBy { get; set; }
+        public virtual User InvestigatedBy { get; set; } = null!;
     }
 }

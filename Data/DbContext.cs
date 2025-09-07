@@ -53,6 +53,11 @@ namespace ASCO.DbContext
         //crew module
         public DbSet<CrewModuleMain> CrewModuleMains { get; set; }
         public DbSet<CrewModuleDatabank> CrewModuleDatabanks { get; set; }
+        public DbSet<DocumentLog> DocumentLogs { get; set; }
+
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        //public DbSet<Document> Documents { get; set; }
+
 
         //on model creating method
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -132,11 +137,11 @@ namespace ASCO.DbContext
             .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
             //document configuration
-            modelBuilder.Entity<Document>()
-            .HasOne(d => d.UploadedBy)
-            .WithMany()
-            .HasForeignKey(d => d.UploadedByUserId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+            // modelBuilder.Entity<Document>()
+            // .HasOne(d => d.UploadedBy)
+            // .WithMany()
+            // .HasForeignKey(d => d.UploadedByUserId)
+            // .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
             //notification configuration
             modelBuilder.Entity<Notification>()
@@ -255,7 +260,7 @@ namespace ASCO.DbContext
             .WithMany()
             .HasForeignKey(ce => ce.CrewMemberId)
             .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes, will look into this later
-            
+
             //cash statements
 
             //crew training configuration
@@ -327,6 +332,26 @@ namespace ASCO.DbContext
                 .WithMany(cm => cm.Databanks)
                 .HasForeignKey(cmd => cmd.FieldId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            //documents
+            modelBuilder.Entity<Document>()
+            .HasOne(d => d.Parent)                // one parent
+            .WithMany(p => p.Children)            // many children
+            .HasForeignKey(d => d.ParentId)       // FK column
+            .OnDelete(DeleteBehavior.Restrict);   // avoid cascade delete loops
+
+            modelBuilder.Entity<Document>()
+            .Property(d => d.Id)
+            .ValueGeneratedNever();
+
+
+            modelBuilder.Entity<DocumentLog>()
+            .Property(dl => dl.Id)
+            .ValueGeneratedNever();
+
+            modelBuilder.Entity<DocumentVersion>()
+            .Property(dv => dv.Id)
+            .ValueGeneratedNever();
         }
     }
 }

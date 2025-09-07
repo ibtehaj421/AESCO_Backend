@@ -53,54 +53,54 @@ namespace ASCO.Models
         public virtual User CreatedBy { get; set; } = null!;
     }
 
-    [Table("Documents")]
-    public class Document
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+    // [Table("Documents")]
+    // public class Document
+    // {
+    //     [Key]
+    //     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    //     public int Id { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string DocumentType { get; set; } = string.Empty; // ship, voyage, maintenance, incident, certificate
+    //     [Required]
+    //     [MaxLength(50)]
+    //     public string DocumentType { get; set; } = string.Empty; // ship, voyage, maintenance, incident, certificate
 
-        [Required]
-        public int EntityId { get; set; } // ID of the related entity (ship, voyage, etc.)
+    //     [Required]
+    //     public int EntityId { get; set; } // ID of the related entity (ship, voyage, etc.)
 
-        [Required]
-        [MaxLength(200)]
-        public string Title { get; set; } = string.Empty;
+    //     [Required]
+    //     [MaxLength(200)]
+    //     public string Title { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(200)]
-        public string FileName { get; set; } = string.Empty;
+    //     [Required]
+    //     [MaxLength(200)]
+    //     public string FileName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(50)]
-        public string FileType { get; set; } = string.Empty; // pdf, doc, jpg, etc.
+    //     [Required]
+    //     [MaxLength(50)]
+    //     public string FileType { get; set; } = string.Empty; // pdf, doc, jpg, etc.
 
-        [Required]
-        [Range(0, long.MaxValue)]
-        public long FileSize { get; set; } // in bytes
+    //     [Required]
+    //     [Range(0, long.MaxValue)]
+    //     public long FileSize { get; set; } // in bytes
 
-        [Required]
-        [MaxLength(500)]
-        public string FilePath { get; set; } = string.Empty;
+    //     [Required]
+    //     [MaxLength(500)]
+    //     public string FilePath { get; set; } = string.Empty;
 
-        [MaxLength(500)]
-        public string? Description { get; set; }
+    //     [MaxLength(500)]
+    //     public string? Description { get; set; }
 
-        [MaxLength(100)]
-        public string? Tags { get; set; } // comma-separated tags
+    //     [MaxLength(100)]
+    //     public string? Tags { get; set; } // comma-separated tags
 
-        public bool IsConfidential { get; set; } = false;
+    //     public bool IsConfidential { get; set; } = false;
 
-        public int UploadedByUserId { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    //     public int UploadedByUserId { get; set; }
+    //     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual User UploadedBy { get; set; } = null!;
-    }
+    //     // Navigation properties
+    //     public virtual User UploadedBy { get; set; } = null!;
+    // }
 
     [Table("Notifications")]
     public class Notification
