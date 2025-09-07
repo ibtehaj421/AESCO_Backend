@@ -65,3 +65,6 @@ Generated\ Files/
 # Windows
 Thumbs.db
 ehthumbs.db
+
+# file folders
+uploads/
