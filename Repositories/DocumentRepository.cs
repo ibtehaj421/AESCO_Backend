@@ -29,6 +29,30 @@ namespace ASCO.Repositories
             return await _context.SaveChangesAsync();
         }
 
+        public async Task<List<(Document Document, DocumentText DocumentText)>> GetDocumentWithTextAsync(string? search)
+        {
+            var query =
+            from d in _context.Documents
+            join dt in _context.DocumentTexts
+                on d.Id equals dt.DocumentId into dtGroup
+            from dt in dtGroup.DefaultIfEmpty() // LEFT JOIN
+            select new { d, dt };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var trimmed = search.Trim();
+                var pattern = $"%{trimmed}%"; // Postgres ILIKE
+
+                query = query.Where(x =>
+                    EF.Functions.ILike(x.d.Name, pattern) ||
+                    (x.dt != null && EF.Functions.ILike(x.dt.Content, pattern))
+                );
+            }
+
+            var results = await query.ToListAsync();
+
+            return results.Select(x => (x.d, x.dt)).ToList();
+        }
         public async Task<int> AddApprovalsAsync(List<DocumentApproval> approvals)
         {
             await _context.DocumentApprovals.AddRangeAsync(approvals);

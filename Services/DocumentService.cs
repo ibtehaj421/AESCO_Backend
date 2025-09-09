@@ -164,7 +164,7 @@ namespace ASCO.Services
                 if (parent == null)
                     throw new InvalidOperationException("Invalid parent");
             }
-            var relativePath = Path.Combine(parent!.PhysicalPath, dto.File.FileName); //the parent cannot be null.
+            var relativePath = Path.Combine(parent!.Name, dto.File.FileName); //the parent cannot be null.
             var filePath = Path.Combine(_updatePath, relativePath);
             version = await _documentRepository.GetDocumentVersionNumberAsync(parent!.Id);
 
@@ -227,7 +227,41 @@ namespace ASCO.Services
             return roots;
 
         }
+        public async Task<List<DocDto>> GetAllByTextAsync(string search)
+        {
+            //get all documents + their text
+            
+            var docsWithText = await _documentRepository.GetDocumentWithTextAsync(search);
 
+            // Map to DTOs
+            var dtos = docsWithText.Select(t => new DocDto
+            {
+                Id = t.Document.Id,
+                Name = t.Document.Name,
+                ParentId = t.Document.ParentId,
+                //Content = t.DocumentText?.Content,
+                Children = new List<DocDto>()
+            }).ToList();
+
+            // Build tree
+            var lookup = dtos.ToDictionary(d => d.Id, d => d);
+            var roots = new List<DocDto>();
+
+            foreach (var doc in dtos)
+            {
+                if (doc.ParentId.HasValue && lookup.TryGetValue(doc.ParentId.Value, out var parent))
+                {
+                    parent.Children.Add(doc);
+                }
+                else
+                {
+                    roots.Add(doc);
+                }
+            }
+
+            return roots;
+
+        }
         public async Task<(Document? Meta, string? FilePath)> GetDocumentWithFileAsync(Guid id)
         {
             //get the document by id.
@@ -242,7 +276,7 @@ namespace ASCO.Services
             var doc = await _documentRepository.GetVersionByIdAsync(id);
             if (doc == null) return (null, null);
 
-            string filepath = "uploads/updates" + doc.PhysicalPath;
+            string filepath = "uploads/updates/" + doc.PhysicalPath;
             return (doc, filepath);
         }
         public async Task<FormTemplateDTO> CreateFormAsync(FormTemplateDTO dto)

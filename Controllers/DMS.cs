@@ -144,5 +144,10 @@ public class DMSController : ControllerBase
 
 
     ///word or sentence search per document. Would need to look through all files at the backend. Kinda hefty for compute but lets see how goes.
-    
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchKeywords([FromBody] string search)
+    {
+        var docs = await _docService.GetAllByTextAsync(search);
+        return Ok(docs);
+    }
 }
