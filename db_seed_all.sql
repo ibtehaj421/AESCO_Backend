@@ -363,6 +363,296 @@ INSERT INTO "DocumentLogs" ("Id","DocumentId","ActionDate","ActionById","ActionT
 SELECT uuid_generate_v4(), d."Id", NOW(), (SELECT MIN("Id") FROM "Users"), 'Upload', 'auto'
 FROM (SELECT "Id" FROM "Documents" ORDER BY "CreatedAt" DESC LIMIT 20) d;
 
+-- Incidents (safety incidents, accidents, near misses)
+INSERT INTO "Incidents" ("ShipId","VoyageId","Title","IncidentType","Severity","IncidentDateTime","Location","Latitude","Longitude","Description","ImmediateActions","RootCause","PreventiveMeasures","Status","AuthoritiesNotified","AuthoritiesNotifiedDetails","ReportedByUserId","InvestigatedByUserId","CreatedAt","UpdatedAt","ResolvedAt")
+SELECT 
+  s."Id",
+  CASE WHEN (row_number() OVER())%3 = 0 THEN (SELECT MIN("Id") FROM "Voyages") ELSE NULL END,
+  'Incident ' || (row_number() OVER()),
+  CASE (row_number() OVER())%5
+    WHEN 0 THEN 'accident'
+    WHEN 1 THEN 'near_miss'
+    WHEN 2 THEN 'equipment_failure'
+    WHEN 3 THEN 'safety'
+    ELSE 'security'
+  END,
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'low'
+    WHEN 1 THEN 'medium'
+    WHEN 2 THEN 'high'
+    ELSE 'critical'
+  END,
+  NOW() - INTERVAL '1 day' * ((row_number() OVER())%30),
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'Engine Room'
+    WHEN 1 THEN 'Bridge'
+    WHEN 2 THEN 'Deck'
+    ELSE 'Cargo Hold'
+  END,
+  CASE (row_number() OVER())%2 WHEN 0 THEN 40.7128 + (random() * 0.1) ELSE NULL END,
+  CASE (row_number() OVER())%2 WHEN 0 THEN -74.0060 + (random() * 0.1) ELSE NULL END,
+  'Auto incident description for ' || s."Name",
+  'Immediate actions taken to address the situation',
+  'Root cause analysis completed',
+  'Preventive measures implemented',
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'open'
+    WHEN 1 THEN 'investigating'
+    WHEN 2 THEN 'resolved'
+    ELSE 'closed'
+  END,
+  (row_number() OVER())%3 = 0,
+  CASE WHEN (row_number() OVER())%3 = 0 THEN 'Coast Guard notified' ELSE NULL END,
+  (SELECT MIN("Id") FROM "Users"),
+  CASE WHEN (row_number() OVER())%2 = 0 THEN (SELECT MIN("Id") FROM "Users") ELSE NULL END,
+  NOW() - INTERVAL '1 day' * ((row_number() OVER())%30),
+  CASE WHEN (row_number() OVER())%3 = 0 THEN NOW() - INTERVAL '1 hour' ELSE NULL END,
+  CASE WHEN (row_number() OVER())%4 = 0 THEN NOW() - INTERVAL '1 hour' ELSE NULL END
+FROM "Ships" s
+CROSS JOIN generate_series(1, 3);
+
+-- VesselMannings (crew positions for each vessel)
+INSERT INTO "VesselMannings" ("VesselId","Rank")
+SELECT 
+  s."Id",
+  CASE (row_number() OVER())%15
+    WHEN 0 THEN 'Captain'
+    WHEN 1 THEN 'Chief Officer'
+    WHEN 2 THEN 'Second Officer'
+    WHEN 3 THEN 'Third Officer'
+    WHEN 4 THEN 'Chief Engineer'
+    WHEN 5 THEN 'Second Engineer'
+    WHEN 6 THEN 'Third Engineer'
+    WHEN 7 THEN 'Fourth Engineer'
+    WHEN 8 THEN 'Bosun'
+    WHEN 9 THEN 'Able Seaman'
+    WHEN 10 THEN 'Ordinary Seaman'
+    WHEN 11 THEN 'Cook'
+    WHEN 12 THEN 'Steward'
+    WHEN 13 THEN 'Electrician'
+    ELSE 'Pumpman'
+  END
+FROM "Ships" s
+CROSS JOIN generate_series(1, 8);
+
+-- Inspections (vessel inspections)
+INSERT INTO "Inspections" ("ShipId","InspectionType","InspectedBy","InspectionDate","NextInspectionDate","Result","Findings","Recommendations","CertificateNumber","CertificateExpiry","Location","CreatedByUserId","CreatedById","CreatedAt")
+SELECT 
+  s."Id",
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'safety'
+    WHEN 1 THEN 'security'
+    WHEN 2 THEN 'environmental'
+    ELSE 'classification'
+  END,
+  CASE (row_number() OVER())%6
+    WHEN 0 THEN 'Port State Control'
+    WHEN 1 THEN 'Flag State'
+    WHEN 2 THEN 'Classification Society'
+    WHEN 3 THEN 'Coast Guard'
+    WHEN 4 THEN 'Maritime Safety Authority'
+    ELSE 'International Maritime Organization'
+  END,
+  NOW() - INTERVAL '1 day' * ((row_number() OVER())%90),
+  NOW() + INTERVAL '1 day' * (365 + ((row_number() OVER())%30)),
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'passed'
+    WHEN 1 THEN 'failed'
+    WHEN 2 THEN 'conditional'
+    ELSE 'pending'
+  END,
+  CASE (row_number() OVER())%3
+    WHEN 0 THEN 'No significant findings'
+    WHEN 1 THEN 'Minor deficiencies noted'
+    ELSE 'Several areas require attention'
+  END,
+  CASE (row_number() OVER())%3
+    WHEN 0 THEN 'Continue current practices'
+    WHEN 1 THEN 'Address minor issues within 30 days'
+    ELSE 'Major corrective actions required'
+  END,
+  'CERT-' || (row_number() OVER())::text,
+  NOW() + INTERVAL '1 day' * (365 + ((row_number() OVER())%30)),
+  CASE (row_number() OVER())%4
+    WHEN 0 THEN 'Port of New York'
+    WHEN 1 THEN 'Port of Los Angeles'
+    WHEN 2 THEN 'Port of Miami'
+    ELSE 'Port of Seattle'
+  END,
+  (SELECT MIN("Id") FROM "Users"),
+  (SELECT MIN("Id") FROM "Users"),
+  NOW() - INTERVAL '1 day' * ((row_number() OVER())%90)
+FROM "Ships" s
+CROSS JOIN generate_series(1, 2);
+
+-- CrewModuleMain (crew module field definitions)
+INSERT INTO "CrewModuleMains" ("FieldName")
+VALUES 
+  ('Personal Information'),
+  ('Employment Details'),
+  ('Medical Records'),
+  ('Training Records'),
+  ('Certifications'),
+  ('Performance Evaluations'),
+  ('Payroll Information'),
+  ('Expense Reports'),
+  ('Work Rest Hours'),
+  ('Incident Reports');
+
+-- CrewModuleDatabank (crew module sub-field definitions)
+INSERT INTO "CrewModuleDatabanks" ("FieldId","SubTypeName")
+SELECT 
+  cm."Id",
+  CASE cm."FieldName"
+    WHEN 'Personal Information' THEN 
+      CASE (row_number() OVER())%4
+        WHEN 0 THEN 'Name'
+        WHEN 1 THEN 'Date of Birth'
+        WHEN 2 THEN 'Nationality'
+        ELSE 'Contact Information'
+      END
+    WHEN 'Employment Details' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Position'
+        WHEN 1 THEN 'Department'
+        ELSE 'Start Date'
+      END
+    WHEN 'Medical Records' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Medical Certificate'
+        WHEN 1 THEN 'Blood Type'
+        ELSE 'Allergies'
+      END
+    WHEN 'Training Records' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Safety Training'
+        WHEN 1 THEN 'Technical Training'
+        ELSE 'Certification Training'
+      END
+    WHEN 'Certifications' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'STCW Certificates'
+        WHEN 1 THEN 'Medical Certificates'
+        ELSE 'Specialized Certificates'
+      END
+    WHEN 'Performance Evaluations' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Annual Review'
+        WHEN 1 THEN 'Probation Review'
+        ELSE 'Promotion Review'
+      END
+    WHEN 'Payroll Information' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Base Salary'
+        WHEN 1 THEN 'Overtime'
+        ELSE 'Bonuses'
+      END
+    WHEN 'Expense Reports' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Travel Expenses'
+        WHEN 1 THEN 'Meal Allowances'
+        ELSE 'Equipment Expenses'
+      END
+    WHEN 'Work Rest Hours' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Working Hours'
+        WHEN 1 THEN 'Rest Hours'
+        ELSE 'Overtime Hours'
+      END
+    ELSE 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Safety Incidents'
+        WHEN 1 THEN 'Near Misses'
+        ELSE 'Equipment Failures'
+      END
+  END
+FROM "CrewModuleMains" cm
+CROSS JOIN generate_series(1, 3);
+
+-- DocumentModuleMain (document module field definitions)
+INSERT INTO "DocumentModuleMains" ("FieldName")
+VALUES 
+  ('Document Management'),
+  ('Version Control'),
+  ('Access Control'),
+  ('Document Types'),
+  ('Storage Locations'),
+  ('Retention Policies'),
+  ('Approval Workflows'),
+  ('Audit Trails'),
+  ('Document Templates'),
+  ('File Formats');
+
+-- DocumentModuleDatabank (document module sub-field definitions)
+INSERT INTO "DocumentModuleDatabanks" ("FieldId","SubTypeName")
+SELECT 
+  dm."Id",
+  CASE dm."FieldName"
+    WHEN 'Document Management' THEN 
+      CASE (row_number() OVER())%4
+        WHEN 0 THEN 'Upload Documents'
+        WHEN 1 THEN 'Download Documents'
+        WHEN 2 THEN 'Delete Documents'
+        ELSE 'Search Documents'
+      END
+    WHEN 'Version Control' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Create Version'
+        WHEN 1 THEN 'Compare Versions'
+        ELSE 'Restore Version'
+      END
+    WHEN 'Access Control' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'User Permissions'
+        WHEN 1 THEN 'Role Permissions'
+        ELSE 'Document Permissions'
+      END
+    WHEN 'Document Types' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'PDF Documents'
+        WHEN 1 THEN 'Word Documents'
+        ELSE 'Excel Spreadsheets'
+      END
+    WHEN 'Storage Locations' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Local Storage'
+        WHEN 1 THEN 'Cloud Storage'
+        ELSE 'Archive Storage'
+      END
+    WHEN 'Retention Policies' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Short Term'
+        WHEN 1 THEN 'Medium Term'
+        ELSE 'Long Term'
+      END
+    WHEN 'Approval Workflows' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Single Approval'
+        WHEN 1 THEN 'Multi-level Approval'
+        ELSE 'Automatic Approval'
+      END
+    WHEN 'Audit Trails' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Access Logs'
+        WHEN 1 THEN 'Modification Logs'
+        ELSE 'Deletion Logs'
+      END
+    WHEN 'Document Templates' THEN 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'Standard Templates'
+        WHEN 1 THEN 'Custom Templates'
+        ELSE 'Form Templates'
+      END
+    ELSE 
+      CASE (row_number() OVER())%3
+        WHEN 0 THEN 'PDF Format'
+        WHEN 1 THEN 'DOCX Format'
+        ELSE 'XLSX Format'
+      END
+  END
+FROM "DocumentModuleMains" dm
+CROSS JOIN generate_series(1, 3);
+
 COMMIT;
 
 SELECT 'Extended bulk seeding completed' AS status;
