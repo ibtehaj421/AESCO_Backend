@@ -572,29 +572,27 @@ namespace ASCO.Services
                 }
             };
 
-            // parallel fetch
-            var medicalTask = _crewRepository.GetMedicalByUserAsync(userId);
-            var passportTask = _crewRepository.GetPassportsByUserAsync(userId);
-            var visaTask = _crewRepository.GetVisasByUserAsync(userId);
-            var reportTask = _crewRepository.GetReportsByUserAsync(userId);
-            var payrollTask = _crewRepository.GetPayrollsByUserAsync(userId);
-            var expenseTask = _crewRepository.GetExpensesByCrewAsync(userId);
-            var assignmentTask = _crewRepository.GetAssignmentsByUserAsync(userId);
-            var trainingTask = _crewRepository.GetTrainingsByUserAsync(userId);
-            var evaluationTask = _crewRepository.GetEvaluationsByUserAsync(userId);
+            // fetch sequentially to avoid DbContext concurrency
+            var medical = await _crewRepository.GetMedicalByUserAsync(userId);
+            var passports = await _crewRepository.GetPassportsByUserAsync(userId);
+            var visas = await _crewRepository.GetVisasByUserAsync(userId);
+            var reports = await _crewRepository.GetReportsByUserAsync(userId);
+            var payrolls = await _crewRepository.GetPayrollsByUserAsync(userId);
+            var expenses = await _crewRepository.GetExpensesByCrewAsync(userId);
+            var assignments = await _crewRepository.GetAssignmentsByUserAsync(userId);
+            var trainings = await _crewRepository.GetTrainingsByUserAsync(userId);
+            var evaluations = await _crewRepository.GetEvaluationsByUserAsync(userId);
 
-            await Task.WhenAll(medicalTask, passportTask, visaTask, reportTask, payrollTask, expenseTask, assignmentTask, trainingTask, evaluationTask);
-
-            profile.MedicalRecords = medicalTask.Result;
-            profile.Passports = passportTask.Result;
-            profile.Visas = visaTask.Result;
-            profile.Reports = reportTask.Result;
-            profile.Payrolls = payrollTask.Result;
-            profile.Expenses = expenseTask.Result;
-            profile.AssignmentHistory = assignmentTask.Result;
+            profile.MedicalRecords = medical;
+            profile.Passports = passports;
+            profile.Visas = visas;
+            profile.Reports = reports;
+            profile.Payrolls = payrolls;
+            profile.Expenses = expenses;
+            profile.AssignmentHistory = assignments;
 
             // map trainings to DTO projection with minimal fields already defined
-            profile.Trainings = trainingTask.Result.Select(ct => new CrewTrainingDto
+            profile.Trainings = trainings.Select(ct => new CrewTrainingDto
             {
                 Id = ct.Id,
                 UserId = ct.UserId,
@@ -619,7 +617,7 @@ namespace ASCO.Services
                 DaysUntilExpiry = ct.ExpireDate.HasValue ? (int)(ct.ExpireDate.Value - DateTime.UtcNow).TotalDays : int.MaxValue
             }).ToList();
 
-            profile.Evaluations = evaluationTask.Result;
+            profile.Evaluations = evaluations;
 
             return profile;
         }
