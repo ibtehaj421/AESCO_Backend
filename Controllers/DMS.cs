@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ASCO.Services;
 using ASCO.DTOs;
+using ASCO.DTOs.Documents;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.StaticFiles;
 //using MimeTypes;

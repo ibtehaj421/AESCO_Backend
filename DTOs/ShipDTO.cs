@@ -214,69 +214,6 @@ namespace ASCO.DTOs
         public string? Notes { get; set; }
     }
 
-    // Crew Certification DTOs
-    public class CreateCrewCertificationDto
-    {
-        [Required(ErrorMessage = "User ID is required")]
-        public int UserId { get; set; }
-
-        [Required(ErrorMessage = "Certification type is required")]
-        [StringLength(100, ErrorMessage = "Certification type cannot exceed 100 characters")]
-        public string CertificationType { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Certificate number is required")]
-        [StringLength(50, ErrorMessage = "Certificate number cannot exceed 50 characters")]
-        public string CertificateNumber { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Issued by is required")]
-        [StringLength(100, ErrorMessage = "Issued by cannot exceed 100 characters")]
-        public string IssuedBy { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Issue date is required")]
-        public DateTime IssuedDate { get; set; }
-
-        [Required(ErrorMessage = "Expiry date is required")]
-        public DateTime ExpiryDate { get; set; }
-
-        [StringLength(100, ErrorMessage = "Issued at cannot exceed 100 characters")]
-        public string? IssuedAt { get; set; }
-
-        [StringLength(500, ErrorMessage = "Limitations cannot exceed 500 characters")]
-        public string? Limitations { get; set; }
-
-        [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
-        public string? Notes { get; set; }
-    }
-
-    public class UpdateCrewCertificationDto : CreateCrewCertificationDto
-    {
-        [Required]
-        public int Id { get; set; }
-
-        [StringLength(30, ErrorMessage = "Status cannot exceed 30 characters")]
-        public string? Status { get; set; }
-    }
-
-    public class CrewCertificationDto
-    {
-        public int Id { get; set; }
-        public int UserId { get; set; }
-        public string UserName { get; set; } = string.Empty;
-        public string CertificationType { get; set; } = string.Empty;
-        public string CertificateNumber { get; set; } = string.Empty;
-        public string IssuedBy { get; set; } = string.Empty;
-        public DateTime IssuedDate { get; set; }
-        public DateTime ExpiryDate { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public string? IssuedAt { get; set; }
-        public string? Limitations { get; set; }
-        public string? Notes { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public bool IsExpiringSoon { get; set; } // calculated property
-        public int DaysUntilExpiry { get; set; } // calculated property
-    }
-
     // Search/Filter DTOs
     public class ShipSearchDto
     {

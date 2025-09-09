@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-
-public class AssignmentDTO
+namespace ASCO.DTOs.Crew
+{
+    public class AssignmentDTO
 {
     public int id { get; set; } //assignment id for updates
 
@@ -18,4 +19,5 @@ public class AssignmentDTO
     public DateTime? EndDate { get; set; } //nullable for ongoing assignments. but it is editable.
     
     public string Notes { get; set; } = string.Empty;
+    }
 }

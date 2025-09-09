@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using ASCO.DbContext;
 using ASCO.DTOs;
+using ASCO.DTOs.Crew;
 
 namespace ASCO.Repositories
 {
@@ -200,6 +201,38 @@ namespace ASCO.Repositories
             }
             return await _context.SaveChangesAsync();
         }
+        public async Task<int> UpdateVesselManningAsync(int vesselId, List<UpdateVesselManningDto> manningUpdates)
+        {
+            var existingManning = await _context.VesselMannings
+                .Where(vm => vm.VesselId == vesselId)
+                .ToListAsync();
+
+            foreach (var update in manningUpdates)
+            {
+                var existing = existingManning.FirstOrDefault(vm => vm.Rank == update.Rank);
+                if (existing != null)
+                {
+                    existing.RequiredCount = update.RequiredCount;
+                    existing.CurrentCount = update.CurrentCount;
+                    existing.Notes = update.Notes;
+                }
+                else
+                {
+                    var newManning = new VesselManning
+                    {
+                        VesselId = vesselId,
+                        Rank = update.Rank,
+                        RequiredCount = update.RequiredCount,
+                        CurrentCount = update.CurrentCount,
+                        Notes = update.Notes
+                    };
+                    _context.VesselMannings.Add(newManning);
+                }
+            }
+
+            return await _context.SaveChangesAsync();
+        }
+
         public async Task<int> DeleteVesselManningAsync(int vesselId, List<string> ranks)
         {
             var toDelete = await _context.VesselMannings
@@ -240,7 +273,7 @@ namespace ASCO.Repositories
                 .OrderByDescending(e => e.ExpenseDate)
                 .ToListAsync();
         }
-        
+
         public async Task<int> AddCashStatementAsync(StatementOfCash soc)
         {
             await _context.CashStatements.AddAsync(soc);
@@ -279,11 +312,11 @@ namespace ASCO.Repositories
 
             if (!string.IsNullOrEmpty(searchDto.SearchTerm))
             {
-                query = query.Where(ct => 
+                query = query.Where(ct =>
                     ct.Training.Contains(searchDto.SearchTerm) ||
                     ct.TrainingCategory.Contains(searchDto.SearchTerm) ||
                     ct.Trainer.Contains(searchDto.SearchTerm) ||
-                    (ct.User != null && 
+                    (ct.User != null &&
                         (ct.User.Name != null && ct.User.Name.Contains(searchDto.SearchTerm) ||
                         ct.User.Surname != null && ct.User.Surname.Contains(searchDto.SearchTerm))) ||
                     ct.Vessel.Name.Contains(searchDto.SearchTerm));
@@ -363,10 +396,10 @@ namespace ASCO.Repositories
 
             if (!string.IsNullOrEmpty(searchDto.SearchTerm))
             {
-                query = query.Where(ce => 
+                query = query.Where(ce =>
                     ce.FormName.Contains(searchDto.SearchTerm) ||
                     ce.FormNo.Contains(searchDto.SearchTerm) ||
-                    (ce.User != null && 
+                    (ce.User != null &&
                         (ce.User.Name != null && ce.User.Name.Contains(searchDto.SearchTerm) ||
                         ce.User.Surname != null && ce.User.Surname.Contains(searchDto.SearchTerm))) ||
                     ce.Vessel.Name.Contains(searchDto.SearchTerm));
@@ -461,7 +494,7 @@ namespace ASCO.Repositories
             // Apply sorting
             query = searchDto.SortBy.ToLower() switch
             {
-                "year,month,day,hour" => searchDto.SortDescending ? 
+                "year,month,day,hour" => searchDto.SortDescending ?
                     query.OrderByDescending(cwrh => cwrh.Year)
                          .ThenByDescending(cwrh => cwrh.Month)
                          .ThenByDescending(cwrh => cwrh.Day)
@@ -492,7 +525,7 @@ namespace ASCO.Repositories
             if (fromDate.HasValue)
             {
                 var fd = fromDate.Value;
-                query = query.Where(cwrh => 
+                query = query.Where(cwrh =>
                     (cwrh.Year > fd.Year) ||
                     (cwrh.Year == fd.Year && cwrh.Month > fd.Month) ||
                     (cwrh.Year == fd.Year && cwrh.Month == fd.Month && cwrh.Day >= fd.Day));
@@ -501,7 +534,7 @@ namespace ASCO.Repositories
             if (toDate.HasValue)
             {
                 var td = toDate.Value;
-                query = query.Where(cwrh => 
+                query = query.Where(cwrh =>
                     (cwrh.Year < td.Year) ||
                     (cwrh.Year == td.Year && cwrh.Month < td.Month) ||
                     (cwrh.Year == td.Year && cwrh.Month == td.Month && cwrh.Day <= td.Day));
@@ -584,11 +617,768 @@ namespace ASCO.Repositories
                 .OrderByDescending(ce => ce.EnteredDate)
                 .ToListAsync();
         }
-    }
 
-    //rest of the stuff goes here.
 
-    
-   
-    
+        //rest of the stuff goes here.
+
+        // ===== USER MANAGEMENT METHODS =====
+
+        public async Task<PagedResult<UserDto>> GetAllCrewMembersAsync(int page = 1, int pageSize = 20, string? status = null, string? jobType = null, string? rank = null)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(u => u.Status == status);
+            if (!string.IsNullOrEmpty(jobType))
+                query = query.Where(u => u.JobType == jobType);
+            if (!string.IsNullOrEmpty(rank))
+                query = query.Where(u => u.Rank == rank);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Name = u.Name ?? string.Empty,
+                    Surname = u.Surname ?? string.Empty,
+                    Nationality = u.Nationality ?? string.Empty,
+                    IdenNumber = u.IdenNumber.ToString(),
+                    DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                    BirthPlace = u.BirthPlace,
+                    Gender = u.Gender ?? string.Empty,
+                    Status = u.Status ?? string.Empty,
+                    JobType = u.JobType ?? string.Empty,
+                    Rank = u.Rank ?? string.Empty,
+                    MaritalStatus = u.MaritalStatus,
+                    MilitaryStatus = u.MilitaryStatus,
+                    EducationLevel = u.EducationLevel,
+                    GraduationYear = u.GraduationYear,
+                    School = u.School,
+                    Competency = u.Competency ?? string.Empty,
+                    OrganizationUnit = u.OrganizationUnit,
+                    Email = u.Email ?? string.Empty,
+                    FatherName = u.FatherName,
+                    WorkEndDate = u.WorkEndDate,
+                    CreatedAt = u.CreatedAt,
+                    UpdatedAt = null,
+                    LastLoginAt = u.LastLoginAt,
+                    EmailConfirmed = u.EmailConfirmed
+                })
+                .ToListAsync();
+
+            return new PagedResult<UserDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<UserDto?> GetCrewMemberByIdAsync(int id)
+        {
+            var user = await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Name = u.Name ?? string.Empty,
+                    Surname = u.Surname ?? string.Empty,
+                    Nationality = u.Nationality ?? string.Empty,
+                    IdenNumber = u.IdenNumber.ToString(),
+                    DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                    BirthPlace = u.BirthPlace,
+                    Gender = u.Gender ?? string.Empty,
+                    Status = u.Status ?? string.Empty,
+                    JobType = u.JobType ?? string.Empty,
+                    Rank = u.Rank ?? string.Empty,
+                    MaritalStatus = u.MaritalStatus,
+                    MilitaryStatus = u.MilitaryStatus,
+                    EducationLevel = u.EducationLevel,
+                    GraduationYear = u.GraduationYear,
+                    School = u.School,
+                    Competency = u.Competency ?? string.Empty,
+                    OrganizationUnit = u.OrganizationUnit,
+                    Email = u.Email ?? string.Empty,
+                    FatherName = u.FatherName,
+                    WorkEndDate = u.WorkEndDate,
+                    CreatedAt = u.CreatedAt,
+                    UpdatedAt = null,
+                    LastLoginAt = u.LastLoginAt,
+                    EmailConfirmed = u.EmailConfirmed
+                })
+                .FirstOrDefaultAsync();
+
+            return user;
+        }
+
+         public async Task<int> DeleteCrewMemberAsync(int id)
+         {
+             var user = await _context.Users.FindAsync(id);
+             if (user == null) return 0;
+
+             _context.Users.Remove(user);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<PagedResult<UserDto>> SearchCrewMembersAsync(CrewSearchDto searchDto)
+         {
+             var query = _context.Users.AsQueryable();
+
+             if (!string.IsNullOrEmpty(searchDto.Name))
+                 query = query.Where(u => u.Name!.Contains(searchDto.Name));
+             if (!string.IsNullOrEmpty(searchDto.Surname))
+                 query = query.Where(u => u.Surname!.Contains(searchDto.Surname));
+             if (!string.IsNullOrEmpty(searchDto.Nationality))
+                 query = query.Where(u => u.Nationality == searchDto.Nationality);
+             if (!string.IsNullOrEmpty(searchDto.Rank))
+                 query = query.Where(u => u.Rank == searchDto.Rank);
+             if (!string.IsNullOrEmpty(searchDto.JobType))
+                 query = query.Where(u => u.JobType == searchDto.JobType);
+             if (!string.IsNullOrEmpty(searchDto.Status))
+                 query = query.Where(u => u.Status == searchDto.Status);
+             if (!string.IsNullOrEmpty(searchDto.Email))
+                 query = query.Where(u => u.Email!.Contains(searchDto.Email));
+             if (searchDto.DateOfBirthFrom.HasValue)
+                 query = query.Where(u => u.DateOfBirth >= searchDto.DateOfBirthFrom);
+             if (searchDto.DateOfBirthTo.HasValue)
+                 query = query.Where(u => u.DateOfBirth <= searchDto.DateOfBirthTo);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((searchDto.Page - 1) * searchDto.PageSize)
+                 .Take(searchDto.PageSize)
+                 .Select(u => new UserDto
+                 {
+                     Id = u.Id,
+                     Name = u.Name ?? string.Empty,
+                     Surname = u.Surname ?? string.Empty,
+                     Nationality = u.Nationality ?? string.Empty,
+                     IdenNumber = u.IdenNumber.ToString(),
+                     DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                     BirthPlace = u.BirthPlace,
+                     Gender = u.Gender ?? string.Empty,
+                     Status = u.Status ?? string.Empty,
+                     JobType = u.JobType ?? string.Empty,
+                     Rank = u.Rank ?? string.Empty,
+                     MaritalStatus = u.MaritalStatus,
+                     MilitaryStatus = u.MilitaryStatus,
+                     EducationLevel = u.EducationLevel,
+                     GraduationYear = u.GraduationYear,
+                     School = u.School,
+                     Competency = u.Competency ?? string.Empty,
+                     OrganizationUnit = u.OrganizationUnit,
+                     Email = u.Email ?? string.Empty,
+                     FatherName = u.FatherName,
+                     WorkEndDate = u.WorkEndDate,
+                     CreatedAt = u.CreatedAt,
+                     UpdatedAt = null,
+                     LastLoginAt = u.LastLoginAt,
+                     EmailConfirmed = u.EmailConfirmed
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<UserDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = searchDto.Page,
+                 PageSize = searchDto.PageSize
+             };
+         }
+
+         public async Task<PagedResult<UserDto>> GetCrewMembersByRankAsync(string rank, int page = 1, int pageSize = 20)
+         {
+             var query = _context.Users.Where(u => u.Rank == rank);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(u => new UserDto
+                 {
+                     Id = u.Id,
+                     Name = u.Name ?? string.Empty,
+                     Surname = u.Surname ?? string.Empty,
+                     Nationality = u.Nationality ?? string.Empty,
+                     IdenNumber = u.IdenNumber.ToString(),
+                     DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                     BirthPlace = u.BirthPlace,
+                     Gender = u.Gender ?? string.Empty,
+                     Status = u.Status ?? string.Empty,
+                     JobType = u.JobType ?? string.Empty,
+                     Rank = u.Rank ?? string.Empty,
+                     MaritalStatus = u.MaritalStatus,
+                     MilitaryStatus = u.MilitaryStatus,
+                     EducationLevel = u.EducationLevel,
+                     GraduationYear = u.GraduationYear,
+                     School = u.School,
+                     Competency = u.Competency ?? string.Empty,
+                     OrganizationUnit = u.OrganizationUnit,
+                     Email = u.Email ?? string.Empty,
+                     FatherName = u.FatherName,
+                     WorkEndDate = u.WorkEndDate,
+                     CreatedAt = u.CreatedAt,
+                     UpdatedAt = null,
+                     LastLoginAt = u.LastLoginAt,
+                     EmailConfirmed = u.EmailConfirmed
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<UserDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<PagedResult<UserDto>> GetCrewMembersByNationalityAsync(string nationality, int page = 1, int pageSize = 20)
+         {
+             var query = _context.Users.Where(u => u.Nationality == nationality);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(u => new UserDto
+                 {
+                     Id = u.Id,
+                     Name = u.Name ?? string.Empty,
+                     Surname = u.Surname ?? string.Empty,
+                     Nationality = u.Nationality ?? string.Empty,
+                     IdenNumber = u.IdenNumber.ToString(),
+                     DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                     BirthPlace = u.BirthPlace,
+                     Gender = u.Gender ?? string.Empty,
+                     Status = u.Status ?? string.Empty,
+                     JobType = u.JobType ?? string.Empty,
+                     Rank = u.Rank ?? string.Empty,
+                     MaritalStatus = u.MaritalStatus,
+                     MilitaryStatus = u.MilitaryStatus,
+                     EducationLevel = u.EducationLevel,
+                     GraduationYear = u.GraduationYear,
+                     School = u.School,
+                     Competency = u.Competency ?? string.Empty,
+                     OrganizationUnit = u.OrganizationUnit,
+                     Email = u.Email ?? string.Empty,
+                     FatherName = u.FatherName,
+                     WorkEndDate = u.WorkEndDate,
+                     CreatedAt = u.CreatedAt,
+                     UpdatedAt = null,
+                     LastLoginAt = u.LastLoginAt,
+                     EmailConfirmed = u.EmailConfirmed
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<UserDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<CrewStatisticsDto> GetCrewStatisticsAsync()
+         {
+             var totalCrew = await _context.Users.CountAsync();
+             var activeCrew = await _context.Users.CountAsync(u => u.Status == "active");
+             var inactiveCrew = await _context.Users.CountAsync(u => u.Status == "inactive");
+
+             var crewByNationality = await _context.Users
+                 .GroupBy(u => u.Nationality)
+                 .Select(g => new { Nationality = g.Key ?? "Unknown", Count = g.Count() })
+                 .ToDictionaryAsync(x => x.Nationality, x => x.Count);
+
+             var crewByRank = await _context.Users
+                 .GroupBy(u => u.Rank)
+                 .Select(g => new { Rank = g.Key ?? "Unknown", Count = g.Count() })
+                 .ToDictionaryAsync(x => x.Rank, x => x.Count);
+
+             var crewByJobType = await _context.Users
+                 .GroupBy(u => u.JobType)
+                 .Select(g => new { JobType = g.Key ?? "Unknown", Count = g.Count() })
+                 .ToDictionaryAsync(x => x.JobType, x => x.Count);
+
+             var crewByStatus = await _context.Users
+                 .GroupBy(u => u.Status)
+                 .Select(g => new { Status = g.Key ?? "Unknown", Count = g.Count() })
+                 .ToDictionaryAsync(x => x.Status, x => x.Count);
+
+             var totalCertifications = await _context.CrewCertifications.CountAsync();
+             var expiredCertifications = await _context.CrewCertifications
+                 .CountAsync(c => c.ExpiryDate < DateTime.UtcNow);
+             var expiringSoonCertifications = await _context.CrewCertifications
+                 .CountAsync(c => (c.ExpiryDate - DateTime.UtcNow).TotalDays <= 30);
+
+             var totalTrainings = await _context.CrewTrainings.CountAsync();
+             var totalEvaluations = await _context.CrewEvaluations.CountAsync();
+             var totalPayrollRecords = await _context.PayrollRecords.CountAsync();
+             var totalExpenseReports = await _context.CrewExpenseReports.CountAsync();
+
+             return new CrewStatisticsDto
+             {
+                 TotalCrewMembers = totalCrew,
+                 ActiveCrewMembers = activeCrew,
+                 InactiveCrewMembers = inactiveCrew,
+                 CrewByNationality = crewByNationality,
+                 CrewByRank = crewByRank,
+                 CrewByJobType = crewByJobType,
+                 CrewByStatus = crewByStatus,
+                 TotalCertifications = totalCertifications,
+                 ExpiredCertifications = expiredCertifications,
+                 ExpiringSoonCertifications = expiringSoonCertifications,
+                 TotalTrainings = totalTrainings,
+                 TotalEvaluations = totalEvaluations,
+                 TotalPayrollRecords = totalPayrollRecords,
+                 TotalExpenseReports = totalExpenseReports
+             };
+         }
+
+         // ===== CERTIFICATION METHODS =====
+         
+         public async Task<PagedResult<CrewCertificationDto>> GetCrewCertificationsAsync(int id, int page = 1, int pageSize = 20, string? status = null)
+         {
+             var query = _context.CrewCertifications
+                 .Include(cc => cc.User)
+                 .Where(cc => cc.UserId == id);
+
+             if (!string.IsNullOrEmpty(status))
+                 query = query.Where(cc => cc.Status == status);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(cc => new CrewCertificationDto
+                 {
+                     Id = cc.Id,
+                     UserId = cc.UserId,
+                     UserName = cc.User.Name ?? string.Empty,
+                     UserSurname = cc.User.Surname ?? string.Empty,
+                     CertificationType = cc.CertificationType,
+                     CertificateNumber = cc.CertificateNumber,
+                     IssuedBy = cc.IssuedBy,
+                     IssuedDate = cc.IssuedDate,
+                     ExpiryDate = cc.ExpiryDate,
+                     Status = cc.Status,
+                     Notes = cc.Notes,
+                     CreatedAt = cc.CreatedAt,
+                     UpdatedAt = cc.UpdatedAt
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<CrewCertificationDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<int> AddCrewCertificationAsync(CrewCertification certification)
+         {
+             _context.CrewCertifications.Add(certification);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<CrewCertification?> GetCrewCertificationByIdAsync(int id)
+         {
+             return await _context.CrewCertifications.FindAsync(id);
+         }
+
+         public async Task<int> UpdateCrewCertificationAsync(CrewCertification certification)
+         {
+             _context.CrewCertifications.Update(certification);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<int> DeleteCrewCertificationAsync(int id)
+         {
+             var certification = await _context.CrewCertifications.FindAsync(id);
+             if (certification == null) return 0;
+
+             _context.CrewCertifications.Remove(certification);
+             return await _context.SaveChangesAsync();
+         }
+
+         // ===== PAYROLL METHODS =====
+         
+         public async Task<PagedResult<PayrollDto>> GetPayrollRecordsAsync(int crewMemberId, int page = 1, int pageSize = 20, string? period = null)
+         {
+             var query = _context.PayrollRecords
+                 .Include(pr => pr.CrewMember)
+                 .Where(pr => pr.CrewMemberId == crewMemberId);
+
+             if (!string.IsNullOrEmpty(period))
+                 query = query.Where(pr => pr.PeriodStart.ToString("yyyy-MM") == period);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(pr => new PayrollDto
+                 {
+                     Id = pr.Id,
+                     UserId = pr.CrewMemberId,
+                     UserName = pr.CrewMember.Name ?? string.Empty,
+                     UserSurname = pr.CrewMember.Surname ?? string.Empty,
+                     Period = pr.PeriodStart.ToString("yyyy-MM"),
+                     BasicSalary = pr.BaseWage,
+                     OvertimePay = pr.Overtime,
+                     Allowances = pr.Bonuses,
+                     Deductions = pr.Deductions,
+                     NetSalary = pr.NetPay,
+                     Currency = pr.Currency,
+                     PaymentDate = pr.PaymentDate,
+                     Status = "Paid", // Default status since it's not in the model
+                     Notes = null, // Not in the model
+                     CreatedAt = DateTime.UtcNow, // Not in the model
+                     UpdatedAt = null // Not in the model
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<PayrollDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<Payroll?> GetPayrollRecordByIdAsync(int id)
+         {
+             return await _context.PayrollRecords.FindAsync(id);
+         }
+
+         public async Task<int> UpdatePayrollRecordAsync(Payroll payroll)
+         {
+             _context.PayrollRecords.Update(payroll);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<VesselManning?> GetVesselManningByIdAsync(int id)
+         {
+             return await _context.VesselMannings.FindAsync(id);
+         }
+
+         // ===== ADDITIONAL VESSEL MANNING METHODS =====
+         
+         public async Task<PagedResult<VesselManningDTO>> GetAllVesselManningsAsync(int page = 1, int pageSize = 20, int? vesselId = null, string? rank = null)
+         {
+             var query = _context.VesselMannings
+                 .Include(vm => vm.Vessel)
+                 .AsQueryable();
+
+             if (vesselId.HasValue)
+                 query = query.Where(vm => vm.VesselId == vesselId.Value);
+             if (!string.IsNullOrEmpty(rank))
+                 query = query.Where(vm => vm.Rank == rank);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(vm => new VesselManningDTO
+                 {
+                     id = vm.Id,
+                     VesselId = vm.VesselId,
+                     Rank = new List<string> { vm.Rank },
+                     count = vm.RequiredCount
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<VesselManningDTO>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<int> UpdateVesselManningAsync(VesselManning manning)
+         {
+             manning.UpdatedAt = DateTime.UtcNow;
+             _context.VesselMannings.Update(manning);
+             return await _context.SaveChangesAsync();
+         }
+
+         // ===== CASH STATEMENT METHODS =====
+         
+         public async Task<PagedResult<CashStatementDto>> GetCashStatementsAsync(int page = 1, int pageSize = 20, int? vesselId = null, DateTime? fromDate = null, DateTime? toDate = null)
+         {
+             var query = _context.CashStatements
+                 .Include(cs => cs.Vessel)
+                 .Include(cs => cs.CreatedBy)
+                 .AsQueryable();
+
+             if (vesselId.HasValue)
+                 query = query.Where(cs => cs.VesselId == vesselId.Value);
+             if (fromDate.HasValue)
+                 query = query.Where(cs => cs.TransactionDate >= fromDate.Value);
+             if (toDate.HasValue)
+                 query = query.Where(cs => cs.TransactionDate <= toDate.Value);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(cs => new CashStatementDto
+                 {
+                     Id = cs.Id,
+                     VesselId = cs.VesselId,
+                     VesselName = cs.Vessel.Name,
+                     CreatedById = cs.CreatedById,
+                     CreatedByName = cs.CreatedBy.Name ?? string.Empty,
+                     Status = cs.status ?? string.Empty,
+                     TransactionDate = cs.TransactionDate,
+                     Description = cs.Description ?? string.Empty,
+                    Inflow = cs.Inflow ?? 0m,
+                    Outflow = cs.Outflow ?? 0m,
+                    Balance = cs.Balance,
+                     CreatedAt = cs.CreatedAt,
+                     UpdatedAt = cs.UpdatedAt
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<CashStatementDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<CashStatementDto?> GetCashStatementByIdAsync(int id)
+         {
+             var statement = await _context.CashStatements
+                 .Include(cs => cs.Vessel)
+                 .Include(cs => cs.CreatedBy)
+                 .Where(cs => cs.Id == id)
+                 .Select(cs => new CashStatementDto
+                 {
+                     Id = cs.Id,
+                     VesselId = cs.VesselId,
+                     VesselName = cs.Vessel.Name,
+                     CreatedById = cs.CreatedById,
+                     CreatedByName = cs.CreatedBy.Name ?? string.Empty,
+                     Status = cs.status ?? string.Empty,
+                     TransactionDate = cs.TransactionDate,
+                     Description = cs.Description ?? string.Empty,
+                    Inflow = cs.Inflow ?? 0m,
+                    Outflow = cs.Outflow ?? 0m,
+                    Balance = cs.Balance,
+                     CreatedAt = cs.CreatedAt,
+                     UpdatedAt = cs.UpdatedAt
+                 })
+                 .FirstOrDefaultAsync();
+
+             return statement;
+         }
+
+         public async Task<int> UpdateCashStatementAsync(StatementOfCash statement)
+         {
+             statement.UpdatedAt = DateTime.UtcNow;
+             _context.CashStatements.Update(statement);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<int> DeleteCashStatementAsync(int id)
+         {
+             var statement = await _context.CashStatements.FindAsync(id);
+             if (statement == null) return 0;
+
+             _context.CashStatements.Remove(statement);
+             return await _context.SaveChangesAsync();
+         }
+
+         // ===== EXPENSE REPORT METHODS =====
+         
+         public async Task<PagedResult<ExpenseReportDto>> GetExpenseReportsAsync(int page = 1, int pageSize = 20, int? crewMemberId = null, int? shipId = null, DateTime? fromDate = null, DateTime? toDate = null)
+         {
+             var query = _context.CrewExpenseReports
+                 .Include(er => er.CrewMember)
+                 .Include(er => er.Ship)
+                 .AsQueryable();
+
+             if (crewMemberId.HasValue)
+                 query = query.Where(er => er.CrewMemberId == crewMemberId.Value);
+             if (shipId.HasValue)
+                 query = query.Where(er => er.ShipId == shipId.Value);
+             if (fromDate.HasValue)
+                 query = query.Where(er => er.ReportDate >= fromDate.Value);
+             if (toDate.HasValue)
+                 query = query.Where(er => er.ReportDate <= toDate.Value);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(er => new ExpenseReportDto
+                 {
+                     Id = (int)er.Id,
+                     CrewMemberId = er.CrewMemberId,
+                     CrewMemberName = er.CrewMember.Name ?? string.Empty,
+                     ShipId = er.ShipId,
+                     ShipName = er.Ship.Name,
+                     TotalAmount = er.TotalAmount,
+                     Currency = er.Currency,
+                     ReportDate = er.ReportDate,
+                     Notes = er.Notes,
+                     CreatedAt = er.CreatedAt,
+                     UpdatedAt = er.UpdatedAt
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<ExpenseReportDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+         public async Task<ExpenseReportDto?> GetExpenseReportByIdAsync(int id)
+         {
+             var report = await _context.CrewExpenseReports
+                 .Include(er => er.CrewMember)
+                 .Include(er => er.Ship)
+                 .Where(er => er.Id == id)
+                 .Select(er => new ExpenseReportDto
+                 {
+                     Id = (int)er.Id,
+                     CrewMemberId = er.CrewMemberId,
+                     CrewMemberName = er.CrewMember.Name ?? string.Empty,
+                     ShipId = er.ShipId,
+                     ShipName = er.Ship.Name,
+                     TotalAmount = er.TotalAmount,
+                     Currency = er.Currency,
+                     ReportDate = er.ReportDate,
+                     Notes = er.Notes,
+                     CreatedAt = er.CreatedAt,
+                     UpdatedAt = er.UpdatedAt
+                 })
+                 .FirstOrDefaultAsync();
+
+             return report;
+         }
+
+         public async Task<int> UpdateExpenseReportAsync(CrewExpenseReport report)
+         {
+             report.UpdatedAt = DateTime.UtcNow;
+             _context.CrewExpenseReports.Update(report);
+             return await _context.SaveChangesAsync();
+         }
+
+         public async Task<int> DeleteExpenseReportAsync(int id)
+         {
+             var report = await _context.CrewExpenseReports.FindAsync(id);
+             if (report == null) return 0;
+
+             _context.CrewExpenseReports.Remove(report);
+             return await _context.SaveChangesAsync();
+         }
+
+         // ===== ADDITIONAL PAYROLL METHODS =====
+         
+         public async Task<PagedResult<PayrollDto>> GetAllPayrollRecordsAsync(int page = 1, int pageSize = 20, int? crewMemberId = null, DateTime? fromDate = null, DateTime? toDate = null)
+         {
+             var query = _context.PayrollRecords
+                 .Include(pr => pr.CrewMember)
+                 .AsQueryable();
+
+             if (crewMemberId.HasValue)
+                 query = query.Where(pr => pr.CrewMemberId == crewMemberId.Value);
+             if (fromDate.HasValue)
+                 query = query.Where(pr => pr.PaymentDate >= fromDate.Value);
+             if (toDate.HasValue)
+                 query = query.Where(pr => pr.PaymentDate <= toDate.Value);
+
+             var totalCount = await query.CountAsync();
+             var items = await query
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .Select(pr => new PayrollDto
+                 {
+                     Id = pr.Id,
+                     UserId = pr.CrewMemberId,
+                     UserName = pr.CrewMember.Name ?? string.Empty,
+                     UserSurname = pr.CrewMember.Surname ?? string.Empty,
+                     Period = pr.PeriodStart.ToString("yyyy-MM"),
+                     BasicSalary = pr.BaseWage,
+                     OvertimePay = pr.Overtime,
+                     Allowances = pr.Bonuses,
+                     Deductions = pr.Deductions,
+                     NetSalary = pr.NetPay,
+                     Currency = pr.Currency,
+                     PaymentDate = pr.PaymentDate,
+                     Status = "Paid",
+                     Notes = null,
+                     CreatedAt = DateTime.UtcNow,
+                     UpdatedAt = null
+                 })
+                 .ToListAsync();
+
+             return new PagedResult<PayrollDto>
+             {
+                 Items = items,
+                 TotalCount = totalCount,
+                 Page = page,
+                 PageSize = pageSize
+             };
+         }
+
+        public async Task<PayrollDto?> GetPayrollRecordDtoByIdAsync(int id)
+        {
+            var payroll = await _context.PayrollRecords
+                .Include(pr => pr.CrewMember)
+                .Where(pr => pr.Id == id)
+                .Select(pr => new PayrollDto
+                {
+                    Id = pr.Id,
+                    UserId = pr.CrewMemberId,
+                    UserName = pr.CrewMember.Name ?? string.Empty,
+                    UserSurname = pr.CrewMember.Surname ?? string.Empty,
+                    Period = pr.PeriodStart.ToString("yyyy-MM"),
+                    BasicSalary = pr.BaseWage,
+                    OvertimePay = pr.Overtime,
+                    Allowances = pr.Bonuses,
+                    Deductions = pr.Deductions,
+                    NetSalary = pr.NetPay,
+                    Currency = pr.Currency,
+                    PaymentDate = pr.PaymentDate,
+                    Status = "Paid",
+                    Notes = null,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = null
+                })
+                .FirstOrDefaultAsync();
+
+            return payroll;
+        }
+
+        public async Task<int> UpdatePayrollRecordEntityAsync(Payroll payroll)
+        {
+            _context.PayrollRecords.Update(payroll);
+            return await _context.SaveChangesAsync();
+        }
+
+         public async Task<int> DeletePayrollRecordAsync(int id)
+         {
+             var payroll = await _context.PayrollRecords.FindAsync(id);
+             if (payroll == null) return 0;
+
+             _context.PayrollRecords.Remove(payroll);
+             return await _context.SaveChangesAsync();
+         }
+     }   
 }

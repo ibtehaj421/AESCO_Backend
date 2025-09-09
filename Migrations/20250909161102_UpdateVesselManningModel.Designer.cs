@@ -3,6 +3,7 @@ using System;
 using ASCO.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendAESCO.Migrations
 {
     [DbContext(typeof(ASCODbContext))]
-    partial class ASCODbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909161102_UpdateVesselManningModel")]
+    partial class UpdateVesselManningModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -804,39 +807,6 @@ namespace BackendAESCO.Migrations
                     b.ToTable("Documents");
                 });
 
-            modelBuilder.Entity("ASCO.Models.DocumentApproval", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ApproverId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("RespondedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApproverId");
-
-                    b.HasIndex("DocumentId");
-
-                    b.ToTable("DocumentApprovals");
-                });
-
             modelBuilder.Entity("ASCO.Models.DocumentLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -906,33 +876,6 @@ namespace BackendAESCO.Migrations
                     b.ToTable("DocumentModuleMains");
                 });
 
-            modelBuilder.Entity("ASCO.Models.DocumentText", b =>
-                {
-                    b.Property<long>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("DocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("VersionedDocumentId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("DocumentId");
-
-                    b.HasIndex("VersionedDocumentId");
-
-                    b.ToTable("DocumentText");
-                });
-
             modelBuilder.Entity("ASCO.Models.DocumentVersion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -941,8 +884,9 @@ namespace BackendAESCO.Migrations
                     b.Property<string>("ChangeDescription")
                         .HasColumnType("text");
 
-                    b.Property<int>("ChangedBy")
-                        .HasColumnType("integer");
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid");
@@ -966,8 +910,6 @@ namespace BackendAESCO.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChangedBy");
 
                     b.HasIndex("DocumentId");
 
@@ -2393,25 +2335,6 @@ namespace BackendAESCO.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
-            modelBuilder.Entity("ASCO.Models.DocumentApproval", b =>
-                {
-                    b.HasOne("ASCO.Models.User", "Approver")
-                        .WithMany()
-                        .HasForeignKey("ApproverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ASCO.Models.Document", "Document")
-                        .WithMany("Approvals")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Approver");
-
-                    b.Navigation("Document");
-                });
-
             modelBuilder.Entity("ASCO.Models.DocumentLog", b =>
                 {
                     b.HasOne("ASCO.Models.User", "ActionBy")
@@ -2442,38 +2365,13 @@ namespace BackendAESCO.Migrations
                     b.Navigation("Field");
                 });
 
-            modelBuilder.Entity("ASCO.Models.DocumentText", b =>
-                {
-                    b.HasOne("ASCO.Models.Document", "Document")
-                        .WithMany()
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ASCO.Models.DocumentVersion", "DocumentVersion")
-                        .WithMany()
-                        .HasForeignKey("VersionedDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Document");
-
-                    b.Navigation("DocumentVersion");
-                });
-
             modelBuilder.Entity("ASCO.Models.DocumentVersion", b =>
                 {
-                    b.HasOne("ASCO.Models.User", "Changed")
-                        .WithMany()
-                        .HasForeignKey("ChangedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ASCO.Models.Document", "Document")
                         .WithMany("Versions")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Changed");
 
                     b.Navigation("Document");
                 });
@@ -2764,8 +2662,6 @@ namespace BackendAESCO.Migrations
 
             modelBuilder.Entity("ASCO.Models.Document", b =>
                 {
-                    b.Navigation("Approvals");
-
                     b.Navigation("Children");
 
                     b.Navigation("Logs");

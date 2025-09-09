@@ -1,7 +1,6 @@
-//leave this mty for now.
-//will configure this later.
 using System.ComponentModel.DataAnnotations;
 using ASCO.DTOs;
+using ASCO.DTOs.Crew;
 using ASCO.Models;
 public abstract class BaseUserDto
 {
@@ -453,7 +452,7 @@ public class CreateCrewProfileDto
     public List<CreateCrewVisaDto>? Visas { get; set; }
     public List<CreateCrewMedicalDto>? MedicalRecords { get; set; }
     public List<CreateCrewReportDto>? Reports { get; set; }
-    public List<PayrollDTO>? Payrolls { get; set; }
+    public List<CreatePayrollDto>? Payrolls { get; set; }
     public List<CreateCrewExpenseDto>? Expenses { get; set; }
     public List<AssignmentDTO>? Assignments { get; set; }
     public List<CreateCrewTrainingDto>? Trainings { get; set; }

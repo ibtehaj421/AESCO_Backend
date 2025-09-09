@@ -1,4 +1,5 @@
 using ASCO.DTOs;
+using ASCO.DTOs.Crew;
 using ASCO.Models;
 using ASCO.Repositories;
 using ASCP.Repositories;
@@ -300,7 +301,7 @@ namespace ASCO.Services
         public Task<List<VesselManning>> GetVesselManningAsync(int vesselId) => _crewRepository.GetVesselManningAsync(vesselId);
 
         //payroll records
-        public async Task<int> AddPayrollRecordAsync(PayrollDTO dto)
+        public async Task<int> AddPayrollRecordAsync(CreatePayrollDto dto)
         {
             var rec = new Payroll
             {
@@ -314,7 +315,6 @@ namespace ASCO.Services
                 Currency = dto.Currency,
                 PaymentDate = dto.PaymentDate,
                 PaymentMethod = dto.PaymentMethod
-
             };
             return await _crewRepository.AddPayrollRecordAsync(rec);
         }
@@ -402,7 +402,7 @@ namespace ASCO.Services
             return await _crewRepository.UpdateCrewTrainingAsync(existing);
         }
 
-        public Task<List<CrewTraining>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto) => 
+        public Task<List<CrewTraining>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto) =>
             _crewRepository.SearchCrewTrainingsAsync(searchDto);
 
         // Crew Evaluation methods
@@ -486,7 +486,7 @@ namespace ASCO.Services
             return await _crewRepository.UpdateCrewEvaluationAsync(existing);
         }
 
-        public Task<List<CrewEvaluation>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto) => 
+        public Task<List<CrewEvaluation>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto) =>
             _crewRepository.SearchCrewEvaluationsAsync(searchDto);
 
         // Crew Work Rest Hours methods
@@ -528,10 +528,10 @@ namespace ASCO.Services
             return await _crewRepository.UpdateCrewWorkRestHoursAsync(existing);
         }
 
-        public Task<List<CrewWorkRestHours>> SearchCrewWorkRestHoursAsync(CrewWorkRestHoursSearchDto searchDto) => 
+        public Task<List<CrewWorkRestHours>> SearchCrewWorkRestHoursAsync(CrewWorkRestHoursSearchDto searchDto) =>
             _crewRepository.SearchCrewWorkRestHoursAsync(searchDto);
 
-        public Task<List<CrewWorkRestHours>> GetCrewWorkRestHoursByUserAsync(int userId, DateTime? fromDate = null, DateTime? toDate = null) => 
+        public Task<List<CrewWorkRestHours>> GetCrewWorkRestHoursByUserAsync(int userId, DateTime? fromDate = null, DateTime? toDate = null) =>
             _crewRepository.GetCrewWorkRestHoursByUserAsync(userId, fromDate, toDate);
 
         // Aggregated crew profile
@@ -757,13 +757,17 @@ namespace ASCO.Services
             // 8) Assignments
             if (request.Assignments != null)
             {
+                // Get the created user to access their rank
+                var createdUser = await _crewRepository.GetUserByIdAsync(userId);
+                var userRank = createdUser?.Rank ?? "Crew Member";
+
                 foreach (var a in request.Assignments)
                 {
                     var assignment = new ShipAssignment
                     {
                         ShipId = a.VesselId,
                         UserId = userId,
-                        //Position = a.Position ?? a.Rank ?? "Crew Member",
+                        Position = userRank,
                         AssignedAt = a.AssignmentDate ?? DateTime.UtcNow,
                         UnassignedAt = a.EndDate,
                         Status = "active",
@@ -858,6 +862,233 @@ namespace ASCO.Services
                 CreatedEvaluations = createdEvaluations
             };
         }
+
+        // ===== USER MANAGEMENT METHODS =====
+
+        public async Task<PagedResult<UserDto>> GetAllCrewMembersAsync(int page = 1, int pageSize = 20, string? status = null, string? jobType = null, string? rank = null)
+        {
+            return await _crewRepository.GetAllCrewMembersAsync(page, pageSize, status, jobType, rank);
+        }
+
+        public async Task<UserDto?> GetCrewMemberByIdAsync(int id)
+        {
+            return await _crewRepository.GetCrewMemberByIdAsync(id);
+        }
+
+        public async Task<int> DeleteCrewMemberAsync(int id)
+        {
+            return await _crewRepository.DeleteCrewMemberAsync(id);
+        }
+
+        public async Task<PagedResult<UserDto>> SearchCrewMembersAsync(CrewSearchDto searchDto)
+        {
+            return await _crewRepository.SearchCrewMembersAsync(searchDto);
+        }
+
+        public async Task<PagedResult<UserDto>> GetCrewMembersByRankAsync(string rank, int page = 1, int pageSize = 20)
+        {
+            return await _crewRepository.GetCrewMembersByRankAsync(rank, page, pageSize);
+        }
+
+        public async Task<PagedResult<UserDto>> GetCrewMembersByNationalityAsync(string nationality, int page = 1, int pageSize = 20)
+        {
+            return await _crewRepository.GetCrewMembersByNationalityAsync(nationality, page, pageSize);
+        }
+
+            public async Task<CrewStatisticsDto> GetCrewStatisticsAsync()
+            {
+                return await _crewRepository.GetCrewStatisticsAsync();
+            }
+
+            // ===== CERTIFICATION METHODS =====
+
+            public async Task<PagedResult<CrewCertificationDto>> GetCrewCertificationsAsync(int id, int page = 1, int pageSize = 20, string? status = null)
+            {
+                return await _crewRepository.GetCrewCertificationsAsync(id, page, pageSize, status);
+            }
+
+            public async Task<int> CreateCrewCertificationAsync(CreateCrewCertificationDto dto)
+            {
+                var certification = new CrewCertification
+                {
+                    UserId = dto.UserId,
+                    CertificationType = dto.CertificationType,
+                    CertificateNumber = dto.CertificateNumber,
+                    IssuedBy = dto.IssuedBy,
+                    IssuedDate = dto.IssuedDate,
+                    ExpiryDate = dto.ExpiryDate,
+                    Status = dto.Status,
+                    Notes = dto.Notes,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                return await _crewRepository.AddCrewCertificationAsync(certification);
+            }
+
+            public async Task<int> UpdateCrewCertificationAsync(UpdateCrewCertificationDto dto)
+            {
+                var certification = await _crewRepository.GetCrewCertificationByIdAsync(dto.Id);
+                if (certification == null) return 0;
+
+                certification.CertificationType = dto.CertificationType;
+                certification.CertificateNumber = dto.CertificateNumber;
+                certification.IssuedBy = dto.IssuedBy;
+                certification.IssuedDate = dto.IssuedDate;
+                certification.ExpiryDate = dto.ExpiryDate;
+                certification.Status = dto.Status;
+                certification.Notes = dto.Notes;
+                certification.UpdatedAt = DateTime.UtcNow;
+
+                return await _crewRepository.UpdateCrewCertificationAsync(certification);
+            }
+
+            public async Task<int> DeleteCrewCertificationAsync(int id)
+            {
+                return await _crewRepository.DeleteCrewCertificationAsync(id);
+            }
+
+            // ===== VESSEL MANNING METHODS =====
+
+            public async Task<PagedResult<VesselManningDTO>> GetAllVesselManningsAsync(int page = 1, int pageSize = 20, int? vesselId = null, string? rank = null)
+            {
+                return await _crewRepository.GetAllVesselManningsAsync(page, pageSize, vesselId, rank);
+            }
+
+            public async Task<VesselManning?> GetVesselManningByIdAsync(int id)
+            {
+                return await _crewRepository.GetVesselManningByIdAsync(id);
+            }
+
+            public async Task<int> UpdateVesselManningAsync(int id, UpdateVesselManningDto dto)
+            {
+                var manning = await _crewRepository.GetVesselManningByIdAsync(id);
+                if (manning == null) return 0;
+
+                var manningEntity = new VesselManning
+                {
+                    Id = id,
+                    VesselId = dto.VesselId,
+                    Rank = dto.Rank
+                };
+
+                return await _crewRepository.UpdateVesselManningAsync(manningEntity);
+            }
+
+            // ===== CASH STATEMENT METHODS =====
+
+            public async Task<PagedResult<CashStatementDto>> GetCashStatementsAsync(int page = 1, int pageSize = 20, int? vesselId = null, DateTime? fromDate = null, DateTime? toDate = null)
+            {
+                return await _crewRepository.GetCashStatementsAsync(page, pageSize, vesselId, fromDate, toDate);
+            }
+
+            public async Task<CashStatementDto?> GetCashStatementByIdAsync(int id)
+            {
+                return await _crewRepository.GetCashStatementByIdAsync(id);
+            }
+
+            public async Task<int> UpdateCashStatementAsync(int id, UpdateCashStatementDto dto)
+            {
+                var statement = await _crewRepository.GetCashStatementByIdAsync(id);
+                if (statement == null) return 0;
+
+                var statementEntity = new StatementOfCash
+                {
+                    Id = id,
+                    VesselId = dto.VesselId,
+                    CreatedById = dto.CreatedById,
+                    status = dto.Status,
+                    TransactionDate = dto.TransactionDate,
+                    Description = dto.Description,
+                    Inflow = dto.Inflow,
+                    Outflow = dto.Outflow,
+                    Balance = dto.Balance,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                return await _crewRepository.UpdateCashStatementAsync(statementEntity);
+            }
+
+            public async Task<int> DeleteCashStatementAsync(int id)
+            {
+                return await _crewRepository.DeleteCashStatementAsync(id);
+            }
+
+            // ===== EXPENSE REPORT METHODS =====
+
+            public async Task<PagedResult<ExpenseReportDto>> GetExpenseReportsAsync(int page = 1, int pageSize = 20, int? crewMemberId = null, int? shipId = null, DateTime? fromDate = null, DateTime? toDate = null)
+            {
+                return await _crewRepository.GetExpenseReportsAsync(page, pageSize, crewMemberId, shipId, fromDate, toDate);
+            }
+
+            public async Task<ExpenseReportDto?> GetExpenseReportByIdAsync(int id)
+            {
+                return await _crewRepository.GetExpenseReportByIdAsync(id);
+            }
+
+            public async Task<int> UpdateExpenseReportAsync(int id, UpdateExpenseReportDto dto)
+            {
+                var report = await _crewRepository.GetExpenseReportByIdAsync(id);
+                if (report == null) return 0;
+
+                var reportEntity = new CrewExpenseReport
+                {
+                    Id = id,
+                    CrewMemberId = dto.CrewMemberId,
+                    ShipId = dto.ShipId,
+                    TotalAmount = dto.TotalAmount,
+                    Currency = dto.Currency,
+                    ReportDate = dto.ReportDate,
+                    Notes = dto.Notes,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                return await _crewRepository.UpdateExpenseReportAsync(reportEntity);
+            }
+
+            public async Task<int> DeleteExpenseReportAsync(int id)
+            {
+                return await _crewRepository.DeleteExpenseReportAsync(id);
+            }
+
+            // ===== PAYROLL METHODS =====
+
+            public async Task<PagedResult<PayrollDto>> GetAllPayrollRecordsAsync(int page = 1, int pageSize = 20, int? crewMemberId = null, DateTime? fromDate = null, DateTime? toDate = null)
+            {
+                return await _crewRepository.GetAllPayrollRecordsAsync(page, pageSize, crewMemberId, fromDate, toDate);
+            }
+
+            public async Task<PayrollDto?> GetPayrollRecordByIdAsync(int id)
+            {
+                return await _crewRepository.GetPayrollRecordDtoByIdAsync(id);
+            }
+
+            public async Task<int> UpdatePayrollRecordAsync(int id, UpdatePayrollDto dto)
+            {
+                var payroll = await _crewRepository.GetPayrollRecordByIdAsync(id);
+                if (payroll == null) return 0;
+
+                var payrollEntity = new Payroll
+                {
+                    Id = id,
+                    CrewMemberId = dto.CrewMemberId,
+                    PeriodStart = dto.PeriodStart,
+                    PeriodEnd = dto.PeriodEnd,
+                    BaseWage = dto.BaseWage,
+                    Overtime = dto.Overtime,
+                    Bonuses = dto.Bonuses,
+                    Deductions = dto.Deductions,
+                    Currency = dto.Currency,
+                    PaymentDate = dto.PaymentDate,
+                    PaymentMethod = dto.PaymentMethod
+                };
+
+                return await _crewRepository.UpdatePayrollRecordAsync(payrollEntity);
+            }
+
+            public async Task<int> DeletePayrollRecordAsync(int id)
+            {
+                return await _crewRepository.DeletePayrollRecordAsync(id);
+            }
+        
     }
-    
 }
