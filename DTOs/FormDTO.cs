@@ -26,7 +26,7 @@ namespace ASCO.DTOs
         [Required]
         [StringLength(100)]
         public string? FieldName { get; set; }
-
+        public string? FieldValue { get; set; } //value entered by the user
         [Required]
         [StringLength(50)]
         public string? FieldType { get; set; } // e.g., Text, Number, Date, etc.
@@ -41,7 +41,7 @@ namespace ASCO.DTOs
     public class FormTemplateDTO
     {
         public FormDTO? Form { get; set; }
-        public List<FormFieldDTO>? Fields { get; set; }
+        public List<FormFieldDTO>? Fields { get; set; } //[item1:value, item2:value2, item3:value3, ...]
     }
 
     

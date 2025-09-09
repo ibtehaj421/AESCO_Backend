@@ -3,6 +3,7 @@ using System;
 using ASCO.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendAESCO.Migrations
 {
     [DbContext(typeof(ASCODbContext))]
-    partial class ASCODbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909113809_DocumentApprovalsTable")]
+    partial class DocumentApprovalsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -704,25 +707,22 @@ namespace BackendAESCO.Migrations
                     b.Property<int>("CreatedByUserId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Day")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int>("Hour")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsWorking")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RestDescription")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("RestHours")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("TotalHours")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -733,8 +733,12 @@ namespace BackendAESCO.Migrations
                     b.Property<int>("VesselId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Year")
-                        .HasColumnType("integer");
+                    b.Property<string>("WorkDescription")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("WorkHours")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 

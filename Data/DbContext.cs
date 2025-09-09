@@ -62,6 +62,10 @@ namespace ASCO.DbContext
 
         public DbSet<DocumentModuleMain> DocumentModuleMains { get; set; }
         public DbSet<DocumentModuleDatabank> DocumentModuleDatabanks { get; set; }
+
+        public DbSet<DocumentApproval> DocumentApprovals { get; set; }
+
+        public DbSet<DocumentText> DocumentTexts { get; set; }
         //public DbSet<Document> Documents { get; set; }
 
 
@@ -365,6 +369,22 @@ namespace ASCO.DbContext
                 .WithMany(dm => dm.Databanks)
                 .HasForeignKey(dmd => dmd.FieldId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
+            //document text storage.
+            // One Document → Many DocumentTexts (optional)
+            modelBuilder.Entity<DocumentText>()
+                    .HasOne(dt => dt.Document)
+                    .WithMany() // if Document doesn’t have a collection navigation
+                    .HasForeignKey(dt => dt.DocumentId)
+                    .OnDelete(DeleteBehavior.SetNull); // if parent deleted → set FK null
+
+            // One DocumentVersion → Many DocumentTexts (optional)
+            modelBuilder.Entity<DocumentText>()
+                    .HasOne(dt => dt.DocumentVersion)
+                    .WithMany() // if DocumentVersion doesn’t have a collection navigation
+                    .HasForeignKey(dt => dt.VersionedDocumentId)
+                    .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

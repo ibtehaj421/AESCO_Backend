@@ -22,6 +22,40 @@ namespace ASCO.Repositories
             return await _context.SaveChangesAsync();
         }
 
+        public async Task<int> AddDocumentTextAsync(DocumentText doc)
+        {
+
+            await _context.DocumentTexts.AddAsync(doc);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> AddApprovalsAsync(List<DocumentApproval> approvals)
+        {
+            await _context.DocumentApprovals.AddRangeAsync(approvals);
+            return await _context.SaveChangesAsync();
+        }
+        public async Task<int> GetDocumentVersionNumberAsync(Guid id)
+        {
+            return await _context.DocumentVersions.CountAsync(d => d.DocumentId == id);
+        }
+
+        public async Task<int> AddVersionAsync(DocumentVersion add)
+        {
+            await _context.DocumentVersions.AddAsync(add);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<DocumentVersion?> GetVersionByIdAsync(Guid id)
+        {
+            return await _context.DocumentVersions.FindAsync(id);
+        }
+        public async Task<List<DocumentVersion>> FetchAllVersionsAsync(Guid id)
+        {
+            return await _context.DocumentVersions
+            .Where(d => d.DocumentId == id)
+            .OrderBy(d => d.VersionNumber)
+            .ToListAsync();
+        }
         public async Task<Document?> GetByIdAsync(Guid id)
         {
             return await _context.Documents.FindAsync(id);

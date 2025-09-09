@@ -6,18 +6,21 @@ using ASCO.Models;
 using ASCO.Repositories;
 using ASCO.DTOs;
 using Microsoft.AspNetCore.Mvc;
-
+using UglyToad.PdfPig;
+using DocumentFormat.OpenXml.Packaging;
 namespace ASCO.Services
 {
     public class DocumentService
     {
         private readonly DocumentRepository _documentRepository;
         private readonly string _basePath;
+        private readonly string _updatePath;
 
         public DocumentService(DocumentRepository documentRepository, IWebHostEnvironment env)
         {
             _documentRepository = documentRepository;
             _basePath = Path.Combine(env.ContentRootPath, "uploads");
+            _updatePath = Path.Combine(env.ContentRootPath, "uploads/updates");
         }
 
         //create method
@@ -85,14 +88,7 @@ namespace ASCO.Services
                 : dto.File.FileName;
 
             var filePath = Path.Combine(_basePath, relativePath);
-            var dir = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir!);
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await dto.File.CopyToAsync(stream);
-            }
 
             var file = new Document
             {
@@ -107,11 +103,106 @@ namespace ASCO.Services
                 UpdatedById = dto.UpdatedBy
             };
 
-            await _documentRepository.AddAsync(file);
+            var value = await _documentRepository.AddAsync(file);
+            if (value < 1)
+            {
+                return new DocDto(); //null entity and not to save the file on the system.
+            }
+            var dir = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
 
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await dto.File.CopyToAsync(stream);
+            }
+
+            //now save the file text in the document text table and also fill the approval table.
+            string text = "";
+            try
+            {
+                text = ExtractText(filePath);
+            }
+            catch (NotSupportedException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            //once text is extracted 
+            var textStore = new DocumentText
+            {
+                DocumentId = file.Id,
+                Content = text
+            };
+            await _documentRepository.AddDocumentTextAsync(textStore);
+            //now save the approval request users.
+            List<DocumentApproval> approvals = new List<DocumentApproval>();
+
+            foreach (int u in dto.Users)
+            {
+                var approval = new DocumentApproval
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = file.Id,
+                    ApproverId = u,
+
+                };
+                approvals.Add(approval);
+            }
+            await _documentRepository.AddApprovalsAsync(approvals);
             return file.ToDto();
         }
+        public async Task<string> UpdateDocumentAsync(UpdateDocDto dto)
+        {
+            if (dto.File == null || dto.File.Length == 0)
+                throw new InvalidOperationException("File is empty");
 
+            Document? parent = null;
+            int version;
+            if (dto.ParentId != Guid.Empty)
+            {
+                parent = await _documentRepository.GetByIdAsync(dto.ParentId);
+                if (parent == null)
+                    throw new InvalidOperationException("Invalid parent");
+            }
+            var relativePath = Path.Combine(parent!.PhysicalPath, dto.File.FileName); //the parent cannot be null.
+            var filePath = Path.Combine(_updatePath, relativePath);
+            version = await _documentRepository.GetDocumentVersionNumberAsync(parent!.Id);
+
+
+
+            var file = new DocumentVersion
+            {
+                Id = Guid.NewGuid(),
+                DocumentId = dto.ParentId,
+                PhysicalPath = relativePath,
+                Extension = "none",
+                ChangedBy = dto.UpdatedBy,
+                ChangeDescription = dto.Reason,
+                VersionNumber = version + 1 //shows the next version value to be added
+            };
+
+            var value = await _documentRepository.AddVersionAsync(file);
+            if (value < 1)
+            {
+                return "Could not be updated.";
+            }
+
+            var dir = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await dto.File.CopyToAsync(stream);
+            }
+            return "Saved successfully.";
+
+        }
+
+        public async Task<List<DocumentVersion>> FetchAllVersionsAsync(Guid id)
+        {
+            var versions = await _documentRepository.FetchAllVersionsAsync(id);
+            return versions;
+        }
         public async Task<List<DocDto>> GetAllByHierarchyAsync()
         {
             //get all documents.
@@ -146,6 +237,14 @@ namespace ASCO.Services
             return (doc, filepath);
         }
 
+        public async Task<(DocumentVersion? Meta, string? FilePath)> GetDocumentVersionWithFileAsync(Guid id)
+        {
+            var doc = await _documentRepository.GetVersionByIdAsync(id);
+            if (doc == null) return (null, null);
+
+            string filepath = "uploads/updates" + doc.PhysicalPath;
+            return (doc, filepath);
+        }
         public async Task<FormTemplateDTO> CreateFormAsync(FormTemplateDTO dto)
         {
             if (dto.Form == null || dto.Fields == null || !dto.Fields.Any())
@@ -173,7 +272,7 @@ namespace ASCO.Services
                 fields.Add(field);
             }
             // Save form and fields in a transaction
-            var (form1,fields1) = await _documentRepository.CreateFormWithFieldsAsync(form, fields);
+            var (form1, fields1) = await _documentRepository.CreateFormWithFieldsAsync(form, fields);
             if (form1.Id < 1)
             {
                 throw new InvalidOperationException("Failed to create form");
@@ -205,10 +304,10 @@ namespace ASCO.Services
         public async Task<List<Form>> GetAllFormTemplatesAsync()
         {
             var forms = await _documentRepository.GetAllFormsAsync();
-            
+
             return forms;
         }
-        
+
         public async Task<FormTemplateDTO?> GetFormTemplateByIdAsync(int id)
         {
             var form = await _documentRepository.GetFormByIdAsync(id);
@@ -238,12 +337,66 @@ namespace ASCO.Services
                 Fields = fieldDtos
             };
         }
+
+        public async Task<string> SubmitFormResponseAsync(FormTemplateDTO dto)
+        {
+            await Task.Delay(1000);
+            return "Form response submitted successfully";
+        }
+
+
+        public static string ExtractText(string filePath)
+        {
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            return extension switch
+            {
+                ".pdf"  => ExtractPdf(filePath),
+                ".docx" => ExtractWord(filePath),
+                _       => throw new NotSupportedException($"File type {extension} is not supported.")
+            };
+        }
+
+        private static string ExtractPdf(string filePath)
+        {
+            var sb = new StringBuilder();
+
+            using (var pdf = PdfDocument.Open(filePath))
+            {
+                foreach (var page in pdf.GetPages())
+                {
+                    sb.AppendLine(page.Text);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private static string ExtractWord(string filePath)
+        {
+            var sb = new StringBuilder();
+
+            using (var wordDoc = WordprocessingDocument.Open(filePath, false))
+            {
+                var body = wordDoc.MainDocumentPart?.Document.Body;
+                if (body != null)
+                {
+                    sb.Append(body.InnerText);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+
     }
-    
+
 
     public class DocumentStorageOptions
     {
         public string BasePath { get; set; } = string.Empty;
     }
+
+
 
 }

@@ -23,7 +23,13 @@ namespace ASCO.DTOs
     {
         public string? Name { get; set; }
 
-        public Guid? ParentId { get; set; }
+        public Guid ParentId { get; set; }
+
+        public int UpdatedBy { get; set; } //will be the person who updated the document.
+
+        public IFormFile File { get; set; } = default!;
+
+        public string? Reason { get; set; } 
     }
 
     // For returning document details (response)
@@ -66,6 +72,8 @@ namespace ASCO.DTOs
 
         public int CreatedBy { get; set; }
         public int UpdatedBy { get; set; }
+
+        public List<int> Users { get; set; } = new List<int>();
     }
 
     public static class DocumentMapper

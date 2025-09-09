@@ -51,6 +51,12 @@ namespace ASCO.Models
         // Logs
         public ICollection<DocumentLog> Logs { get; set; } = new List<DocumentLog>();
 
+
+        //List of approvals.
+        public ICollection<DocumentApproval> Approvals { get; set; } = new List<DocumentApproval>();
+
+
+
         [ForeignKey(nameof(CreatedById))]
         public virtual User CreatedBy { get; set; } = null!;
 
@@ -58,6 +64,29 @@ namespace ASCO.Models
         public virtual User UpdatedBy { get; set; } = null!;
 
     }
+
+    [Table("DocumentText")]
+    public class DocumentText
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long id { get; set; }
+
+        [ForeignKey("DocumentId")]
+        public virtual Document? Document { get; set; } = null!;
+        public Guid? DocumentId { get; set; } //reference document id.
+
+        public Guid? VersionedDocumentId { get; set; }
+
+        [ForeignKey("VersionedDocumentId")]
+        
+        public virtual DocumentVersion? DocumentVersion { get; set; } = null!; 
+
+        public string Content { get; set; } = string.Empty;
+
+        
+    }
+
 
     [Table("DocumentVersions")]
     public class DocumentVersion
@@ -81,7 +110,10 @@ namespace ASCO.Models
         public long SizeInBytes { get; set; }
 
         public DateTime VersionDate { get; set; } = DateTime.UtcNow;
-        public string ChangedBy { get; set; } = string.Empty;
+        public int ChangedBy { get; set; }
+
+        [ForeignKey("ChangedBy")]
+        public virtual User Changed { get; set; } = null!;
         public string? ChangeDescription { get; set; } // e.g., "Updated contract terms"
 
         public int VersionNumber { get; set; }
@@ -112,5 +144,37 @@ namespace ASCO.Models
 
         [ForeignKey(nameof(ActionById))]
         public virtual User ActionBy { get; set; } = null!;
+    }
+
+    public enum ApprovalStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+    [Table("DocumentApprovals")]
+    public class DocumentApproval
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public Guid Id { get; set; }
+
+        [Required]
+        public Guid DocumentId { get; set; }
+        [ForeignKey("DocumentId")]
+        public Document Document { get; set; } = null!;
+
+        [Required]
+        public int ApproverId { get; set; }
+        [ForeignKey(nameof(ApproverId))]
+        public User Approver { get; set; } = null!;
+
+        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? RespondedAt { get; set; }
+
+        public ApprovalStatus Status { get; set; } = ApprovalStatus.Pending;
+
+        [MaxLength(500)]
+        public string? Notes { get; set; }
     }
 }

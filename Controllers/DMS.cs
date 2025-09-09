@@ -68,6 +68,47 @@ public class DMSController : ControllerBase
         return File(fileBytes, contentType);
     }
 
+    [HttpPost("update")]
+    public async Task<IActionResult> UpdateDocumentMetadata([FromForm] UpdateDocDto dto)
+    {
+        var updatedDoc = await _docService.UpdateDocumentAsync(dto);
+        if (updatedDoc == null)
+            return NotFound(new { message = "Document not found or could not be updated" });
+
+        return Ok(updatedDoc);
+    }
+
+    [HttpGet("fetch/versions/{id}")]
+    public async Task<IActionResult> FetchAllVersions(Guid id)
+    {
+        //this method would return meta data of versions.
+        var versions = await _docService.FetchAllVersionsAsync(id);
+        if (versions == null)
+        {
+            return NotFound(new { message = "No versions exist for the following document." });
+        }
+        return Ok(versions);
+    }
+
+    [HttpGet("fetch/version/{id}")]
+    public async Task<IActionResult> FetchVersionDocument(Guid id)
+    {
+        //this would fetch the version of a document from selected versions.
+        var (doc, filePath) = await _docService.GetDocumentVersionWithFileAsync(id);
+        if (doc == null || string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+            return NotFound(new { message = "Document not found" });
+
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(filePath, out string? contentType))
+        {
+            contentType = "application/octet-stream"; // fallback
+        }
+        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        //Response.Headers.Add("Content-Disposition", $"inline; filename={doc.Name}");
+        Response.Headers.Append("Content-Disposition", $"inline;");
+
+        return File(fileBytes, contentType);
+    }
 
     //forms and creations
     [HttpPost("form/create")]
@@ -92,5 +133,16 @@ public class DMSController : ControllerBase
         return Ok(form);
     }
 
+    [HttpPost("form/response")]
+    public async Task<IActionResult> SubmitFormResponse([FromBody] FormTemplateDTO dto)
+    {
+        var response = await _docService.SubmitFormResponseAsync(dto);
+        return Ok(response);
+    }
     //a post method in order to store form responses in json files.
+
+
+
+    ///word or sentence search per document. Would need to look through all files at the backend. Kinda hefty for compute but lets see how goes.
+    
 }
