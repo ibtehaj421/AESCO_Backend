@@ -237,26 +237,27 @@ namespace ASCO.DTOs
         [Required(ErrorMessage = "Vessel is required")]
         public int VesselId { get; set; }
 
-        [Required(ErrorMessage = "Date is required")]
-        public DateTime Date { get; set; }
+        [Required]
+        [Range(2000, 3000)]
+        public int Year { get; set; }
 
-        [Required(ErrorMessage = "Work hours is required")]
-        [Range(0, 24, ErrorMessage = "Work hours must be between 0 and 24")]
-        public decimal WorkHours { get; set; }
+        [Required]
+        [Range(1, 12)]
+        public int Month { get; set; }
 
-        [Required(ErrorMessage = "Rest hours is required")]
-        [Range(0, 24, ErrorMessage = "Rest hours must be between 0 and 24")]
-        public decimal RestHours { get; set; }
+        [Required]
+        [Range(1, 31)]
+        public int Day { get; set; }
 
-        [Required(ErrorMessage = "Total hours is required")]
-        [Range(0, 24, ErrorMessage = "Total hours must be between 0 and 24")]
-        public decimal TotalHours { get; set; }
+        [Required]
+        [Range(0, 23)]
+        public int Hour { get; set; }
 
-        [StringLength(200, ErrorMessage = "Work description cannot exceed 200 characters")]
-        public string? WorkDescription { get; set; }
+        [Required]
+        public bool IsWorking { get; set; }
 
-        [StringLength(200, ErrorMessage = "Rest description cannot exceed 200 characters")]
-        public string? RestDescription { get; set; }
+        [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
+        public string? Description { get; set; }
 
         [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
         public string? Notes { get; set; }
@@ -277,12 +278,12 @@ namespace ASCO.DTOs
         public string FullName => $"{UserName} {UserSurname}";
         public int VesselId { get; set; }
         public string VesselName { get; set; } = string.Empty;
-        public DateTime Date { get; set; }
-        public decimal WorkHours { get; set; }
-        public decimal RestHours { get; set; }
-        public decimal TotalHours { get; set; }
-        public string? WorkDescription { get; set; }
-        public string? RestDescription { get; set; }
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public int Day { get; set; }
+        public int Hour { get; set; }
+        public bool IsWorking { get; set; }
+        public string? Description { get; set; }
         public string? Notes { get; set; }
         public string CreatedByName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -327,11 +328,15 @@ namespace ASCO.DTOs
     {
         public int? UserId { get; set; }
         public int? VesselId { get; set; }
-        public DateTime? DateFrom { get; set; }
-        public DateTime? DateTo { get; set; }
+        public int? Year { get; set; }
+        public int? Month { get; set; }
+        public int? DayFrom { get; set; }
+        public int? DayTo { get; set; }
+        public int? HourFrom { get; set; }
+        public int? HourTo { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
-        public string SortBy { get; set; } = "Date";
+        public string SortBy { get; set; } = "Year,Month,Day,Hour";
         public bool SortDescending { get; set; } = true;
     }
 }

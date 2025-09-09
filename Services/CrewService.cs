@@ -496,12 +496,12 @@ namespace ASCO.Services
             {
                 UserId = dto.UserId,
                 VesselId = dto.VesselId,
-                Date = dto.Date,
-                WorkHours = dto.WorkHours,
-                RestHours = dto.RestHours,
-                TotalHours = dto.TotalHours,
-                WorkDescription = dto.WorkDescription,
-                RestDescription = dto.RestDescription,
+                Year = dto.Year,
+                Month = dto.Month,
+                Day = dto.Day,
+                Hour = dto.Hour,
+                IsWorking = dto.IsWorking,
+                Description = dto.Description,
                 Notes = dto.Notes,
                 CreatedByUserId = 1, // TODO: Get from current user context
                 CreatedAt = DateTime.UtcNow
@@ -516,12 +516,12 @@ namespace ASCO.Services
 
             existing.UserId = dto.UserId;
             existing.VesselId = dto.VesselId;
-            existing.Date = dto.Date;
-            existing.WorkHours = dto.WorkHours;
-            existing.RestHours = dto.RestHours;
-            existing.TotalHours = dto.TotalHours;
-            existing.WorkDescription = dto.WorkDescription;
-            existing.RestDescription = dto.RestDescription;
+            existing.Year = dto.Year;
+            existing.Month = dto.Month;
+            existing.Day = dto.Day;
+            existing.Hour = dto.Hour;
+            existing.IsWorking = dto.IsWorking;
+            existing.Description = dto.Description;
             existing.Notes = dto.Notes;
             existing.UpdatedAt = DateTime.UtcNow;
 

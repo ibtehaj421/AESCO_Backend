@@ -21,26 +21,28 @@ namespace ASCO.Models
         [ForeignKey(nameof(VesselId))]
         public virtual Ship Vessel { get; set; } = null!;
 
+        // Granular time breakdown
         [Required]
-        public DateTime Date { get; set; }
+        [Range(2000, 3000)]
+        public int Year { get; set; }
 
         [Required]
-        [Range(0, 24, ErrorMessage = "Work hours must be between 0 and 24")]
-        public decimal WorkHours { get; set; }
+        [Range(1, 12)]
+        public int Month { get; set; }
 
         [Required]
-        [Range(0, 24, ErrorMessage = "Rest hours must be between 0 and 24")]
-        public decimal RestHours { get; set; }
+        [Range(1, 31)]
+        public int Day { get; set; }
 
         [Required]
-        [Range(0, 24, ErrorMessage = "Total hours must be between 0 and 24")]
-        public decimal TotalHours { get; set; }
+        [Range(0, 23)]
+        public int Hour { get; set; }
+
+        [Required]
+        public bool IsWorking { get; set; }
 
         [StringLength(200)]
-        public string? WorkDescription { get; set; }
-
-        [StringLength(200)]
-        public string? RestDescription { get; set; }
+        public string? Description { get; set; }
 
         [StringLength(500)]
         public string? Notes { get; set; }

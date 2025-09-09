@@ -445,18 +445,32 @@ namespace ASCO.Repositories
             if (searchDto.VesselId.HasValue)
                 query = query.Where(cwrh => cwrh.VesselId == searchDto.VesselId.Value);
 
-            if (searchDto.DateFrom.HasValue)
-                query = query.Where(cwrh => cwrh.Date >= searchDto.DateFrom.Value);
-
-            if (searchDto.DateTo.HasValue)
-                query = query.Where(cwrh => cwrh.Date <= searchDto.DateTo.Value);
+            if (searchDto.Year.HasValue)
+                query = query.Where(cwrh => cwrh.Year == searchDto.Year.Value);
+            if (searchDto.Month.HasValue)
+                query = query.Where(cwrh => cwrh.Month == searchDto.Month.Value);
+            if (searchDto.DayFrom.HasValue)
+                query = query.Where(cwrh => cwrh.Day >= searchDto.DayFrom.Value);
+            if (searchDto.DayTo.HasValue)
+                query = query.Where(cwrh => cwrh.Day <= searchDto.DayTo.Value);
+            if (searchDto.HourFrom.HasValue)
+                query = query.Where(cwrh => cwrh.Hour >= searchDto.HourFrom.Value);
+            if (searchDto.HourTo.HasValue)
+                query = query.Where(cwrh => cwrh.Hour <= searchDto.HourTo.Value);
 
             // Apply sorting
             query = searchDto.SortBy.ToLower() switch
             {
-                "date" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.Date) : query.OrderBy(cwrh => cwrh.Date),
-                "workhours" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.WorkHours) : query.OrderBy(cwrh => cwrh.WorkHours),
-                "resthours" => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.RestHours) : query.OrderBy(cwrh => cwrh.RestHours),
+                "year,month,day,hour" => searchDto.SortDescending ? 
+                    query.OrderByDescending(cwrh => cwrh.Year)
+                         .ThenByDescending(cwrh => cwrh.Month)
+                         .ThenByDescending(cwrh => cwrh.Day)
+                         .ThenByDescending(cwrh => cwrh.Hour)
+                    :
+                    query.OrderBy(cwrh => cwrh.Year)
+                         .ThenBy(cwrh => cwrh.Month)
+                         .ThenBy(cwrh => cwrh.Day)
+                         .ThenBy(cwrh => cwrh.Hour),
                 _ => searchDto.SortDescending ? query.OrderByDescending(cwrh => cwrh.CreatedAt) : query.OrderBy(cwrh => cwrh.CreatedAt)
             };
 
@@ -474,13 +488,31 @@ namespace ASCO.Repositories
                 .Include(cwrh => cwrh.CreatedByUser)
                 .Where(cwrh => cwrh.UserId == userId);
 
+            // keep legacy range support by mapping to Year/Month/Day
             if (fromDate.HasValue)
-                query = query.Where(cwrh => cwrh.Date >= fromDate.Value);
+            {
+                var fd = fromDate.Value;
+                query = query.Where(cwrh => 
+                    (cwrh.Year > fd.Year) ||
+                    (cwrh.Year == fd.Year && cwrh.Month > fd.Month) ||
+                    (cwrh.Year == fd.Year && cwrh.Month == fd.Month && cwrh.Day >= fd.Day));
+            }
 
             if (toDate.HasValue)
-                query = query.Where(cwrh => cwrh.Date <= toDate.Value);
+            {
+                var td = toDate.Value;
+                query = query.Where(cwrh => 
+                    (cwrh.Year < td.Year) ||
+                    (cwrh.Year == td.Year && cwrh.Month < td.Month) ||
+                    (cwrh.Year == td.Year && cwrh.Month == td.Month && cwrh.Day <= td.Day));
+            }
 
-            return await query.OrderByDescending(cwrh => cwrh.Date).ToListAsync();
+            return await query
+                .OrderByDescending(cwrh => cwrh.Year)
+                .ThenByDescending(cwrh => cwrh.Month)
+                .ThenByDescending(cwrh => cwrh.Day)
+                .ThenByDescending(cwrh => cwrh.Hour)
+                .ToListAsync();
         }
 
         // Aggregation helpers for CrewProfile
