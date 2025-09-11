@@ -143,6 +143,19 @@ public class UserDto
 
     // Role information
     public List<UserRoleDto> Roles { get; set; } = new List<UserRoleDto>();
+
+    // CrewList extras
+    public string? PassportNumber { get; set; }
+    public DateTime? PassportExpiry { get; set; }
+    public string? WhereEmbarked { get; set; }
+    public DateTime? WhenEmbarked { get; set; }
+    public int? AssignmentId { get; set; } // For assignment operations
+    
+    // Assignment-related properties
+    public string? Position { get; set; }
+    public DateTime? AssignedAt { get; set; }
+    public DateTime? UnassignedAt { get; set; }
+    public string? Notes { get; set; }
 }
 
 // DTO for user roles

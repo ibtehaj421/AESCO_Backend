@@ -271,6 +271,35 @@ public class CrewController : ControllerBase
         return Ok(manning); //if the values are empty, it means there is no manning for that vessel.
     }
 
+    [HttpGet("vessel/{vesselId}")]
+    public async Task<IActionResult> GetCrewMembersByVessel(int vesselId)
+    {
+        if (vesselId <= 0) return BadRequest("Invalid vessel id");
+        var crewMembers = await _crewService.GetCrewMembersByVesselAsync(vesselId);
+        return Ok(crewMembers);
+    }
+
+    [HttpGet("available")]
+    public async Task<IActionResult> GetAvailableCrewMembers()
+    {
+        var availableCrew = await _crewService.GetAvailableCrewMembersAsync();
+        return Ok(availableCrew);
+    }
+
+    [HttpGet("ranks/available")]
+    public async Task<IActionResult> GetAvailableRanks()
+    {
+        var availableRanks = await _crewService.GetAvailableRanksAsync();
+        return Ok(availableRanks);
+    }
+
+    [HttpGet("ranks/all")]
+    public async Task<IActionResult> GetAllPossibleRanks()
+    {
+        var allRanks = await _crewService.GetAllPossibleRanksAsync();
+        return Ok(allRanks);
+    }
+
     [HttpPost("vessel/manning/add")]
     public async Task<IActionResult> AddVesselManning([FromBody] VesselManningDTO dto)
     {
@@ -429,6 +458,16 @@ public class CrewController : ControllerBase
     {
         if (dto == null || dto.PersonalInfo == null) return BadRequest("Invalid payload");
         var result = await _crewService.CreateCrewProfileAsync(dto);
+        return Ok(result);
+    }
+
+    // Update aggregated crew profile
+    [HttpPut("profile/update/{userId}")]
+    public async Task<IActionResult> UpdateCrewProfile(int userId, [FromBody] CreateCrewProfileDto dto)
+    {
+        if (userId <= 0) return BadRequest("Invalid user id");
+        if (dto == null || dto.PersonalInfo == null) return BadRequest("Invalid payload");
+        var result = await _crewService.UpdateCrewProfileAsync(userId, dto);
         return Ok(result);
     }
 

@@ -362,6 +362,53 @@ namespace ASCO.Repositories
                 .ToListAsync();
         }
 
+        public async Task<int> GetCrewTrainingsCountAsync(CrewTrainingSearchDto searchDto)
+        {
+            var query = _context.CrewTrainings
+                .Include(ct => ct.User)
+                .Include(ct => ct.Vessel)
+                .Include(ct => ct.CreatedByUser)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchDto.SearchTerm))
+            {
+                query = query.Where(ct =>
+                    ct.Training.Contains(searchDto.SearchTerm) ||
+                    ct.TrainingCategory.Contains(searchDto.SearchTerm) ||
+                    ct.Trainer.Contains(searchDto.SearchTerm) ||
+                    (ct.User != null &&
+                        (ct.User.Name != null && ct.User.Name.Contains(searchDto.SearchTerm) ||
+                        ct.User.Surname != null && ct.User.Surname.Contains(searchDto.SearchTerm))) ||
+                    ct.Vessel.Name.Contains(searchDto.SearchTerm));
+            }
+
+            if (searchDto.UserId.HasValue)
+                query = query.Where(ct => ct.UserId == searchDto.UserId.Value);
+
+            if (searchDto.VesselId.HasValue)
+                query = query.Where(ct => ct.VesselId == searchDto.VesselId.Value);
+
+            if (!string.IsNullOrEmpty(searchDto.TrainingCategory))
+                query = query.Where(ct => ct.TrainingCategory == searchDto.TrainingCategory);
+
+            if (!string.IsNullOrEmpty(searchDto.Status))
+                query = query.Where(ct => ct.Status == searchDto.Status);
+
+            if (searchDto.TrainingDateFrom.HasValue)
+                query = query.Where(ct => ct.TrainingDate >= searchDto.TrainingDateFrom.Value);
+
+            if (searchDto.TrainingDateTo.HasValue)
+                query = query.Where(ct => ct.TrainingDate <= searchDto.TrainingDateTo.Value);
+
+            if (searchDto.ExpireDateFrom.HasValue)
+                query = query.Where(ct => ct.ExpireDate >= searchDto.ExpireDateFrom.Value);
+
+            if (searchDto.ExpireDateTo.HasValue)
+                query = query.Where(ct => ct.ExpireDate <= searchDto.ExpireDateTo.Value);
+
+            return await query.CountAsync();
+        }
+
         // Crew Evaluation methods
         public async Task<int> AddCrewEvaluationAsync(CrewEvaluation evaluation)
         {
@@ -440,6 +487,50 @@ namespace ASCO.Repositories
                 .Skip((searchDto.Page - 1) * searchDto.PageSize)
                 .Take(searchDto.PageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetCrewEvaluationsCountAsync(CrewEvaluationSearchDto searchDto)
+        {
+            var query = _context.CrewEvaluations
+                .Include(ce => ce.User)
+                .Include(ce => ce.Vessel)
+                .Include(ce => ce.EnteredBy)
+                .Include(ce => ce.CreatedByUser)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchDto.SearchTerm))
+            {
+                query = query.Where(ce =>
+                    ce.FormName.Contains(searchDto.SearchTerm) ||
+                    ce.FormNo.Contains(searchDto.SearchTerm) ||
+                    (ce.User != null &&
+                        (ce.User.Name != null && ce.User.Name.Contains(searchDto.SearchTerm) ||
+                        ce.User.Surname != null && ce.User.Surname.Contains(searchDto.SearchTerm))) ||
+                    ce.Vessel.Name.Contains(searchDto.SearchTerm));
+            }
+
+            if (searchDto.UserId.HasValue)
+                query = query.Where(ce => ce.UserId == searchDto.UserId.Value);
+
+            if (searchDto.VesselId.HasValue)
+                query = query.Where(ce => ce.VesselId == searchDto.VesselId.Value);
+
+            if (!string.IsNullOrEmpty(searchDto.Status))
+                query = query.Where(ce => ce.Status == searchDto.Status);
+
+            if (searchDto.EnteredDateFrom.HasValue)
+                query = query.Where(ce => ce.EnteredDate >= searchDto.EnteredDateFrom.Value);
+
+            if (searchDto.EnteredDateTo.HasValue)
+                query = query.Where(ce => ce.EnteredDate <= searchDto.EnteredDateTo.Value);
+
+            if (searchDto.MinOverallRating.HasValue)
+                query = query.Where(ce => ce.OverallRating >= searchDto.MinOverallRating.Value);
+
+            if (searchDto.MaxOverallRating.HasValue)
+                query = query.Where(ce => ce.OverallRating <= searchDto.MaxOverallRating.Value);
+
+            return await query.CountAsync();
         }
 
         // Crew Work Rest Hours methods
@@ -602,6 +693,92 @@ namespace ASCO.Repositories
                 .ToListAsync();
         }
 
+        public Task<List<ShipAssignment>> GetCrewMembersByVesselAsync(int vesselId)
+        {
+            return _context.ShipAssignments
+                .Include(a => a.User)
+                .Where(a => a.ShipId == vesselId && a.Status == "active")
+                .OrderByDescending(a => a.AssignedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<UserDto>> GetAvailableCrewMembersAsync()
+        {
+            // Get all users who are not currently assigned to any vessel
+            var availableUsers = await _context.Users
+                .Where(u => u.Status == "active" && 
+                           !_context.ShipAssignments.Any(sa => sa.UserId == u.Id && sa.Status == "active"))
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Name = u.Name ?? "",
+                    Surname = u.Surname ?? "",
+                    Email = u.Email ?? "",
+                    Rank = u.Rank ?? "",
+                    Nationality = u.Nationality ?? "",
+                    DateOfBirth = u.DateOfBirth ?? DateTime.MinValue,
+                    BirthPlace = u.BirthPlace,
+                    Gender = u.Gender ?? "",
+                    Status = u.Status ?? "",
+                    JobType = u.JobType ?? "",
+                    MaritalStatus = u.MaritalStatus,
+                    MilitaryStatus = u.MilitaryStatus,
+                    EducationLevel = u.EducationLevel,
+                    GraduationYear = u.GraduationYear,
+                    School = u.School,
+                    Competency = u.Competency ?? "",
+                    OrganizationUnit = u.OrganizationUnit,
+                    FatherName = u.FatherName,
+                    WorkEndDate = u.WorkEndDate,
+                    CreatedAt = u.CreatedAt,
+                    UpdatedAt = null, // User model doesn't have UpdatedAt
+                    LastLoginAt = u.LastLoginAt,
+                    EmailConfirmed = u.EmailConfirmed,
+                    // Get passport info
+                    PassportNumber = _context.CrewPassports
+                        .Where(p => p.UserId == u.Id)
+                        .OrderByDescending(p => p.ExpiryDate)
+                        .Select(p => p.PassportNumber)
+                        .FirstOrDefault(),
+                    PassportExpiry = _context.CrewPassports
+                        .Where(p => p.UserId == u.Id)
+                        .OrderByDescending(p => p.ExpiryDate)
+                        .Select(p => (DateTime?)p.ExpiryDate)
+                        .FirstOrDefault()
+                })
+                .OrderBy(u => u.Name)
+                .ToListAsync();
+
+            return availableUsers;
+        }
+
+        public async Task<List<string>> GetAvailableRanksAsync()
+        {
+            // Get all ranks that are not currently assigned to any vessel
+            var availableRanks = await _context.Users
+                .Where(u => u.Status == "active" && u.Rank != null && u.Rank != "")
+                .Select(u => u.Rank!)
+                .Distinct()
+                .Where(rank => !_context.VesselMannings.Any(vm => vm.Rank == rank))
+                .OrderBy(rank => rank)
+                .ToListAsync();
+
+            return availableRanks;
+        }
+
+        public async Task<List<string>> GetAllPossibleRanksAsync()
+        {
+            // Get all distinct ranks from active users
+            var allRanks = await _context.Users
+                .Where(u => u.Status == "active" && u.Rank != null && u.Rank != "")
+                .Select(u => u.Rank!)
+                .Distinct()
+                .OrderBy(rank => rank)
+                .ToListAsync();
+
+            return allRanks;
+        }
+
         public Task<List<CrewTraining>> GetTrainingsByUserAsync(int userId)
         {
             return _context.CrewTrainings
@@ -664,7 +841,23 @@ namespace ASCO.Repositories
                     CreatedAt = u.CreatedAt,
                     UpdatedAt = null,
                     LastLoginAt = u.LastLoginAt,
-                    EmailConfirmed = u.EmailConfirmed
+                    EmailConfirmed = u.EmailConfirmed,
+                    PassportNumber = _context.CrewPassports.Where(p => p.UserId == u.Id)
+                                           .OrderByDescending(p => p.ExpiryDate)
+                                           .Select(p => p.PassportNumber)
+                                           .FirstOrDefault(),
+                    PassportExpiry = _context.CrewPassports.Where(p => p.UserId == u.Id)
+                                           .OrderByDescending(p => p.ExpiryDate)
+                                           .Select(p => (DateTime?)p.ExpiryDate)
+                                           .FirstOrDefault(),
+                    WhereEmbarked = _context.ShipAssignments.Where(a => a.UserId == u.Id)
+                                           .OrderByDescending(a => a.AssignedAt)
+                                           .Select(a => a.Notes)
+                                           .FirstOrDefault(),
+                    WhenEmbarked = _context.ShipAssignments.Where(a => a.UserId == u.Id)
+                                           .OrderByDescending(a => a.AssignedAt)
+                                           .Select(a => a.AssignedAt)
+                                           .FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -776,7 +969,23 @@ namespace ASCO.Repositories
                      CreatedAt = u.CreatedAt,
                      UpdatedAt = null,
                      LastLoginAt = u.LastLoginAt,
-                     EmailConfirmed = u.EmailConfirmed
+                     EmailConfirmed = u.EmailConfirmed,
+                     PassportNumber = _context.CrewPassports.Where(p => p.UserId == u.Id)
+                                            .OrderByDescending(p => p.ExpiryDate)
+                                            .Select(p => p.PassportNumber)
+                                            .FirstOrDefault(),
+                     PassportExpiry = _context.CrewPassports.Where(p => p.UserId == u.Id)
+                                            .OrderByDescending(p => p.ExpiryDate)
+                                            .Select(p => (DateTime?)p.ExpiryDate)
+                                            .FirstOrDefault(),
+                     WhereEmbarked = _context.ShipAssignments.Where(a => a.UserId == u.Id)
+                                            .OrderByDescending(a => a.AssignedAt)
+                                            .Select(a => a.Notes)
+                                            .FirstOrDefault(),
+                     WhenEmbarked = _context.ShipAssignments.Where(a => a.UserId == u.Id)
+                                            .OrderByDescending(a => a.AssignedAt)
+                                            .Select(a => a.AssignedAt)
+                                            .FirstOrDefault()
                  })
                  .ToListAsync();
 
@@ -1380,5 +1589,48 @@ namespace ASCO.Repositories
              _context.PayrollRecords.Remove(payroll);
              return await _context.SaveChangesAsync();
          }
+
+        // Bulk delete methods for profile updates
+        public async Task<int> DeletePassportsByUserIdAsync(int userId)
+        {
+            var passports = await _context.CrewPassports.Where(p => p.UserId == userId).ToListAsync();
+            _context.CrewPassports.RemoveRange(passports);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> DeleteVisasByUserIdAsync(int userId)
+        {
+            var visas = await _context.CrewVisas.Where(v => v.UserId == userId).ToListAsync();
+            _context.CrewVisas.RemoveRange(visas);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> DeleteMedicalByUserIdAsync(int userId)
+        {
+            var medical = await _context.CrewMedicalRecords.Where(m => m.UserId == userId).ToListAsync();
+            _context.CrewMedicalRecords.RemoveRange(medical);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> DeleteReportsByUserIdAsync(int userId)
+        {
+            var reports = await _context.CrewReports.Where(r => r.UserId == userId).ToListAsync();
+            _context.CrewReports.RemoveRange(reports);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> DeletePayrollsByUserIdAsync(int userId)
+        {
+            var payrolls = await _context.PayrollRecords.Where(p => p.CrewMemberId == userId).ToListAsync();
+            _context.PayrollRecords.RemoveRange(payrolls);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> DeleteTrainingsByUserIdAsync(int userId)
+        {
+            var trainings = await _context.CrewTrainings.Where(t => t.UserId == userId).ToListAsync();
+            _context.CrewTrainings.RemoveRange(trainings);
+            return await _context.SaveChangesAsync();
+        }
      }   
 }

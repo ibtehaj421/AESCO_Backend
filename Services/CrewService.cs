@@ -300,6 +300,40 @@ namespace ASCO.Services
         }
         public Task<List<VesselManning>> GetVesselManningAsync(int vesselId) => _crewRepository.GetVesselManningAsync(vesselId);
 
+        public async Task<List<UserDto>> GetCrewMembersByVesselAsync(int vesselId)
+        {
+            var assignments = await _crewRepository.GetCrewMembersByVesselAsync(vesselId);
+            return assignments.Select(a => new UserDto
+            {
+                Id = a.UserId,
+                Name = a.User?.Name ?? "",
+                Surname = a.User?.Surname ?? "",
+                Email = a.User?.Email ?? "",
+                Rank = a.User?.Rank ?? "",
+                Position = a.Position,
+                AssignedAt = a.AssignedAt,
+                UnassignedAt = a.UnassignedAt,
+                Status = a.Status,
+                Notes = a.Notes,
+                AssignmentId = a.Id
+            }).ToList();
+        }
+
+        public async Task<List<UserDto>> GetAvailableCrewMembersAsync()
+        {
+            return await _crewRepository.GetAvailableCrewMembersAsync();
+        }
+
+        public async Task<List<string>> GetAvailableRanksAsync()
+        {
+            return await _crewRepository.GetAvailableRanksAsync();
+        }
+
+        public async Task<List<string>> GetAllPossibleRanksAsync()
+        {
+            return await _crewRepository.GetAllPossibleRanksAsync();
+        }
+
         //payroll records
         public async Task<int> AddPayrollRecordAsync(CreatePayrollDto dto)
         {
@@ -402,8 +436,44 @@ namespace ASCO.Services
             return await _crewRepository.UpdateCrewTrainingAsync(existing);
         }
 
-        public Task<List<CrewTraining>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto) =>
-            _crewRepository.SearchCrewTrainingsAsync(searchDto);
+        public async Task<PagedResult<CrewTrainingDto>> SearchCrewTrainingsAsync(CrewTrainingSearchDto searchDto)
+        {
+            var trainings = await _crewRepository.SearchCrewTrainingsAsync(searchDto);
+            var totalCount = await _crewRepository.GetCrewTrainingsCountAsync(searchDto);
+
+            var trainingDtos = trainings.Select(ct => new CrewTrainingDto
+            {
+                Id = ct.Id,
+                UserId = ct.UserId,
+                UserName = ct.User?.Name ?? string.Empty,
+                UserSurname = ct.User?.Surname ?? string.Empty,
+                VesselId = ct.VesselId,
+                VesselName = ct.Vessel?.Name ?? string.Empty,
+                TrainingCategory = ct.TrainingCategory,
+                Rank = ct.Rank,
+                Trainer = ct.Trainer,
+                Remark = ct.Remark,
+                Training = ct.Training,
+                Source = ct.Source,
+                TrainingDate = ct.TrainingDate,
+                ExpireDate = ct.ExpireDate,
+                Status = ct.Status,
+                Attachments = ct.Attachments,
+                CreatedByName = ct.CreatedByUser?.Name + " " + ct.CreatedByUser?.Surname ?? string.Empty,
+                CreatedAt = ct.CreatedAt,
+                UpdatedAt = ct.UpdatedAt,
+                IsExpiringSoon = ct.ExpireDate.HasValue && (ct.ExpireDate.Value - DateTime.UtcNow).TotalDays <= 30,
+                DaysUntilExpiry = ct.ExpireDate.HasValue ? (int)(ct.ExpireDate.Value - DateTime.UtcNow).TotalDays : int.MaxValue
+            }).ToList();
+
+            return new PagedResult<CrewTrainingDto>
+            {
+                Items = trainingDtos,
+                TotalCount = totalCount,
+                Page = searchDto.Page,
+                PageSize = searchDto.PageSize
+            };
+        }
 
         // Crew Evaluation methods
         public async Task<int> CreateCrewEvaluationAsync(CreateCrewEvaluationDto dto)
@@ -486,8 +556,60 @@ namespace ASCO.Services
             return await _crewRepository.UpdateCrewEvaluationAsync(existing);
         }
 
-        public Task<List<CrewEvaluation>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto) =>
-            _crewRepository.SearchCrewEvaluationsAsync(searchDto);
+        public async Task<PagedResult<CrewEvaluationDto>> SearchCrewEvaluationsAsync(CrewEvaluationSearchDto searchDto)
+        {
+            var evaluations = await _crewRepository.SearchCrewEvaluationsAsync(searchDto);
+            var totalCount = await _crewRepository.GetCrewEvaluationsCountAsync(searchDto);
+
+            var evaluationDtos = evaluations.Select(ce => new CrewEvaluationDto
+            {
+                Id = ce.Id,
+                UserId = ce.UserId,
+                UserName = ce.User?.Name ?? string.Empty,
+                UserSurname = ce.User?.Surname ?? string.Empty,
+                VesselId = ce.VesselId,
+                VesselName = ce.Vessel?.Name ?? string.Empty,
+                FormNo = ce.FormNo,
+                RevisionNo = ce.RevisionNo,
+                RevisionDate = ce.RevisionDate,
+                FormName = ce.FormName,
+                FormDescription = ce.FormDescription,
+                EnteredByName = ce.EnteredBy?.Name + " " + ce.EnteredBy?.Surname ?? string.Empty,
+                EnteredDate = ce.EnteredDate,
+                Rank = ce.Rank,
+                Name = ce.Name,
+                Surname = ce.Surname,
+                UniqueId = ce.UniqueId,
+                TechnicalCompetence = ce.TechnicalCompetence,
+                SafetyAwareness = ce.SafetyAwareness,
+                Teamwork = ce.Teamwork,
+                Communication = ce.Communication,
+                Leadership = ce.Leadership,
+                ProblemSolving = ce.ProblemSolving,
+                Adaptability = ce.Adaptability,
+                WorkEthic = ce.WorkEthic,
+                OverallRating = ce.OverallRating,
+                Strengths = ce.Strengths,
+                AreasForImprovement = ce.AreasForImprovement,
+                Comments = ce.Comments,
+                CrewMemberComments = ce.CrewMemberComments,
+                CrewMemberSignature = ce.CrewMemberSignature,
+                CrewMemberSignedDate = ce.CrewMemberSignedDate,
+                Status = ce.Status,
+                Attachments = ce.Attachments,
+                CreatedByName = ce.CreatedByUser?.Name + " " + ce.CreatedByUser?.Surname ?? string.Empty,
+                CreatedAt = ce.CreatedAt,
+                UpdatedAt = ce.UpdatedAt
+            }).ToList();
+
+            return new PagedResult<CrewEvaluationDto>
+            {
+                Items = evaluationDtos,
+                TotalCount = totalCount,
+                Page = searchDto.Page,
+                PageSize = searchDto.PageSize
+            };
+        }
 
         // Crew Work Rest Hours methods
         public async Task<int> CreateCrewWorkRestHoursAsync(CreateCrewWorkRestHoursDto dto)
@@ -1089,6 +1211,189 @@ namespace ASCO.Services
             {
                 return await _crewRepository.DeletePayrollRecordAsync(id);
             }
+
+        // Update comprehensive crew profile
+        public async Task<CreateCrewProfileResultDto> UpdateCrewProfileAsync(int userId, CreateCrewProfileDto request)
+        {
+            // 1) Update user basic information
+            var updateUserDto = new UpdateUserDto
+            {
+                Id = userId,
+                Name = request.PersonalInfo.Name,
+                Surname = request.PersonalInfo.Surname,
+                Nationality = request.PersonalInfo.Nationality,
+                IdenNumber = request.PersonalInfo.IdenNumber,
+                DateOfBirth = request.PersonalInfo.DateOfBirth,
+                BirthPlace = request.PersonalInfo.BirthPlace,
+                Gender = request.PersonalInfo.Gender,
+                JobType = request.PersonalInfo.JobType,
+                Rank = request.PersonalInfo.Rank,
+                MaritalStatus = request.PersonalInfo.MaritalStatus,
+                MilitaryStatus = request.PersonalInfo.MilitaryStatus,
+                EducationLevel = request.PersonalInfo.EducationLevel,
+                GraduationYear = request.PersonalInfo.GraduationYear,
+                School = request.PersonalInfo.School,
+                Competency = request.PersonalInfo.Competency,
+                OrganizationUnit = request.PersonalInfo.OrganizationUnit,
+                Email = request.PersonalInfo.Email,
+                FatherName = request.PersonalInfo.FatherName,
+                WorkEndDate = request.PersonalInfo.WorkEndDate,
+                Status = request.PersonalInfo.Status
+            };
+
+            var userUpdated = await UpdateCrewAsync(updateUserDto);
+
+            int updatedPassports = 0, updatedVisas = 0, updatedMedical = 0, updatedReports = 0,
+                updatedPayrolls = 0, updatedExpenses = 0, updatedAssignments = 0, updatedTrainings = 0, updatedEvaluations = 0;
+
+            // 2) Update Passports (delete existing and add new ones)
+            if (request.Passports != null)
+            {
+                // Delete existing passports
+                await _crewRepository.DeletePassportsByUserIdAsync(userId);
+                
+                // Add new passports
+                foreach (var p in request.Passports)
+                {
+                    var rec = new CrewPassport
+                    {
+                        UserId = userId,
+                        PassportNumber = p.PassportNumber,
+                        Nationality = p.Nationality,
+                        IssueDate = p.IssueDate,
+                        ExpiryDate = p.ExpiryDate,
+                        IssuedBy = p.IssuedBy,
+                        Notes = p.Notes
+                    };
+                    updatedPassports += await _crewRepository.AddPassportAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 3) Update Visas
+            if (request.Visas != null)
+            {
+                await _crewRepository.DeleteVisasByUserIdAsync(userId);
+                
+                foreach (var v in request.Visas)
+                {
+                    var rec = new CrewVisa
+                    {
+                        UserId = userId,
+                        VisaType = v.VisaType,
+                        Country = v.Country,
+                        IssueDate = v.IssueDate,
+                        ExpiryDate = v.ExpiryDate,
+                        IssuedBy = v.IssuedBy,
+                        Notes = v.Notes
+                    };
+                    updatedVisas += await _crewRepository.AddVisaAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 4) Update Medical Records
+            if (request.MedicalRecords != null)
+            {
+                await _crewRepository.DeleteMedicalByUserIdAsync(userId);
+                
+                foreach (var m in request.MedicalRecords)
+                {
+                    var rec = new CrewMedicalRecord
+                    {
+                        UserId = userId,
+                        ProviderName = m.ProviderName,
+                        BloodGroup = m.BloodGroup,
+                        ExaminationDate = m.ExaminationDate,
+                        ExpiryDate = m.ExpiryDate,
+                        Notes = m.Notes
+                    };
+                    updatedMedical += await _crewRepository.AddMedicalAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 5) Update Reports
+            if (request.Reports != null)
+            {
+                await _crewRepository.DeleteReportsByUserIdAsync(userId);
+                
+                foreach (var r in request.Reports)
+                {
+                    var rec = new CrewReport
+                    {
+                        UserId = userId,
+                        ReportType = r.ReportType,
+                        Title = r.Title,
+                        Details = r.Details,
+                        ReportDate = r.ReportDate ?? DateTime.UtcNow
+                    };
+                    updatedReports += await _crewRepository.AddCrewReportAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 6) Update Payrolls
+            if (request.Payrolls != null)
+            {
+                await _crewRepository.DeletePayrollsByUserIdAsync(userId);
+                
+                foreach (var pr in request.Payrolls)
+                {
+                    var rec = new Payroll
+                    {
+                        CrewMemberId = userId,
+                        PeriodStart = pr.PeriodStart,
+                        PeriodEnd = pr.PeriodEnd,
+                        BaseWage = pr.BaseWage,
+                        Overtime = pr.Overtime,
+                        Bonuses = pr.Bonuses,
+                        Deductions = pr.Deductions,
+                        Currency = pr.Currency,
+                        PaymentDate = pr.PaymentDate,
+                        PaymentMethod = pr.PaymentMethod
+                    };
+                    updatedPayrolls += await _crewRepository.AddPayrollRecordAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            // 7) Update Trainings
+            if (request.Trainings != null)
+            {
+                await _crewRepository.DeleteTrainingsByUserIdAsync(userId);
+                
+                foreach (var t in request.Trainings)
+                {
+                    var rec = new CrewTraining
+                    {
+                        UserId = userId,
+                        VesselId = t.VesselId,
+                        TrainingCategory = t.TrainingCategory,
+                        Rank = t.Rank,
+                        Trainer = t.Trainer,
+                        Remark = t.Remark,
+                        Training = t.Training,
+                        Source = t.Source,
+                        TrainingDate = t.TrainingDate,
+                        ExpireDate = t.ExpireDate,
+                        Status = t.Status,
+                        Attachments = t.Attachments,
+                        CreatedByUserId = userId // Assuming current user is updating
+                    };
+                    updatedTrainings += await _crewRepository.AddCrewTrainingAsync(rec) > 0 ? 1 : 0;
+                }
+            }
+
+            return new CreateCrewProfileResultDto
+            {
+                UserId = userId,
+                CreatedPassports = updatedPassports,
+                CreatedVisas = updatedVisas,
+                CreatedMedical = updatedMedical,
+                CreatedReports = updatedReports,
+                CreatedPayrolls = updatedPayrolls,
+                CreatedExpenses = updatedExpenses,
+                CreatedAssignments = updatedAssignments,
+                CreatedTrainings = updatedTrainings,
+                CreatedEvaluations = updatedEvaluations
+            };
+        }
         
     }
 }

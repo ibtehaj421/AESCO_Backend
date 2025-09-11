@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ASCO.DTOs
+namespace ASCO.DTOs.Documents
 {
     // Certificate DTOs
     public class CreateCertificateDto

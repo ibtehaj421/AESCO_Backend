@@ -15,9 +15,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost3000", builder =>
     {
-        builder.WithOrigins("http://localhost:3000") //can be any but for now lets just say the frontend is at port 3000
+        builder.WithOrigins("http://localhost:3000", "http://localhost:5173") // Allow both React (3000) and Vite (5173) ports
                .AllowAnyMethod()
-               .AllowAnyHeader();
+               .AllowAnyHeader()
+               .AllowCredentials(); // Allow credentials if needed
     });
 });
 //all class configurations and services should be added here
@@ -31,6 +32,8 @@ builder.Services.AddScoped<VesselRepository>();
 builder.Services.AddScoped<VesselService>();
 builder.Services.AddScoped<DocumentRepository>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<DashboardRepository>();
+builder.Services.AddScoped<DashboardService>();
 builder.Services.Configure<DocumentStorageOptions>(
     builder.Configuration.GetSection("DocumentStorage")
 );
@@ -88,7 +91,7 @@ builder.Services.AddAuthentication ( options => {
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 var app = builder.Build();
-app.UseCors("AllowLocalhost3000");
+
 //automatic migration application
 if (!app.Environment.IsEnvironment("Test"))
 {
@@ -113,6 +116,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS must be placed before Authentication and Authorization
+app.UseCors("AllowLocalhost3000");
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
